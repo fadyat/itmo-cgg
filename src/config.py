@@ -1,0 +1,1 @@
+PNM_SUPPORTED_FORMATS = ('P5', 'P6',)
