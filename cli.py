@@ -7,10 +7,10 @@ def read_pnm(
     image_path: str = './docs/shrek.pnm',
 ):
     with PnmReader(image_path) as reader:
-        reader.read_header()
+        picture_body = tuple(reader.read())
+
+    return picture_body
 
 
 if __name__ == '__main__':
-    fire.Fire({
-        'read': read_pnm,
-    })
+    fire.Fire({'read': read_pnm})
