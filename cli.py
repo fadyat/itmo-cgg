@@ -31,4 +31,4 @@ def write_pnm(
 
 
 if __name__ == '__main__':
-    fire.Fire({'read': read_pnm})
+    fire.Fire({'read': read_pnm, 'write': write_pnm})

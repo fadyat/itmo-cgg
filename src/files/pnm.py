@@ -43,7 +43,7 @@ class PnmFile:
         self.__read_header()
         yield from self.__read_body()
 
-    @debug_log
+    @debug_log()
     def read_all(
         self,
     ) -> typing.Tuple[typedef.color_code]:
