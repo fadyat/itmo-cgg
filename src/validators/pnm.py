@@ -1,11 +1,11 @@
 import typing
 
-from src import config
+from src import config, typedef
 from src.errors.pnm import PnmHeaderError, PnmError
 
 
 def validate_max_color(
-    max_color_value: str,
+    max_color_value: str | typedef.color_code,
 ) -> int:
     try:
         max_color_value = int(max_color_value)
@@ -19,10 +19,13 @@ def validate_max_color(
 
 
 def validate_width_and_height(
-    file_size: str,
+    file_size: str | typing.Tuple[int, int],
 ) -> typing.Tuple[int, int]:
     try:
-        width, height = tuple(map(int, file_size.split(' ')))
+        if isinstance(file_size, str):
+            width, height = tuple(map(int, file_size.split(' ')))
+        else:
+            width, height = file_size
     except ValueError:
         raise PnmHeaderError('Invalid file size %s' % file_size)
 
@@ -44,3 +47,15 @@ def validate_file(
 ):
     if file.closed:
         raise PnmError('File is closed, use context manager')
+
+
+def validate_image_content(
+    image_content: typing.Sequence[typedef.color_code],
+    width: int,
+    height: int,
+    bytes_per_pixel: int,
+):
+    if len(image_content) // width != bytes_per_pixel * height:
+        raise PnmError('Invalid image content size')
+
+    return image_content

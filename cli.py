@@ -1,15 +1,33 @@
 import fire
 
-from src.readers.pnm import PnmReader
+from src.decorators import catch
+from src.files.pnm import PnmFile
 
 
+@catch
 def read_pnm(
     image_path: str = './docs/shrek.pnm',
 ):
-    with PnmReader(image_path) as reader:
-        picture_body = tuple(reader.read())
+    with PnmFile(image_path, mode='rb') as reader:
+        reader.read_all()
 
-    return picture_body
+
+@catch
+def write_pnm(
+    image_path: str = './docs/shrek.pnm',
+    output_path: str = './docs/shrek_copy.pnm',
+):
+    with PnmFile(image_path, mode='rb') as reader:
+        picture_body = reader.read_all()
+
+    with PnmFile(output_path, mode='wb') as writer:
+        writer.write(
+            pnm_format=reader.pnm_format,
+            width=reader.width,
+            height=reader.height,
+            image_content=picture_body,
+            max_color_value=reader.max_color_value,
+        )
 
 
 if __name__ == '__main__':
