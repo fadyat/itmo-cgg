@@ -6,7 +6,8 @@ from src.validators.pnm import (
     validate_max_color,
     validate_width_and_height,
     validate_pnm_format,
-    validate_file, validate_image_content,
+    validate_file,
+    validate_image_content,
 )
 
 
@@ -61,10 +62,11 @@ class PnmFile:
     def __read_body(
         self,
     ) -> typing.Iterator[typedef.color_code]:
+        # todo: fix reading by pixel ?
         return (
             ord(self.__file.read(1))
-            for _ in range(self.width)
             for _ in range(self.height)
+            for _ in range(self.width)
             for _ in range(self.bytes_per_pixel)
         )
 

@@ -11,7 +11,7 @@ def debug_log(do: bool = False):
             result = f(*args, **kwargs)
             if do:
                 print(f.__name__, args, kwargs)
-                print('some data', result[:min(10, len(result))])
+                print('some data', result[: min(10, len(result))])
 
             return result
 
@@ -39,6 +39,7 @@ def catch_with_error_message(f):
         try:
             result = f(*args, **kwargs)
         except (PnmError, UnicodeDecodeError, ValueError, TypeError) as e:
+            # todo: add error message to message box
             PnmFileErrorMessage().exec()
         else:
             return result
