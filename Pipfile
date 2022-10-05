@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 fire = "==0.4.0"
+pyqt6 = "==6.4.0"
 
 [dev-packages]
 black = "==22.8.0"

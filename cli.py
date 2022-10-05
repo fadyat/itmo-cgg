@@ -1,7 +1,9 @@
 import fire
+from PyQt6.QtWidgets import QApplication
 
 from src.decorators import catch
 from src.files.pnm import PnmFile
+from src.ui.pnm import PnmWidget
 
 
 @catch
@@ -30,5 +32,12 @@ def write_pnm(
         )
 
 
+def ui():
+    app = QApplication([])
+    pnm_window = PnmWidget()
+    pnm_window.show()
+    app.exec()
+
+
 if __name__ == '__main__':
-    fire.Fire({'read': read_pnm, 'write': write_pnm})
+    fire.Fire({'read': read_pnm, 'write': write_pnm, 'ui': ui})
