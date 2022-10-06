@@ -1,7 +1,6 @@
 import functools
 
 from src.errors.pnm import PnmError
-from src.ui.errors import PnmFileErrorMessage
 
 
 def debug_log(do: bool = False):
@@ -27,20 +26,6 @@ def catch(f):
             result = f(*args, **kwargs)
         except (PnmError, UnicodeDecodeError, ValueError, TypeError) as e:
             print(e)
-        else:
-            return result
-
-    return wrapper
-
-
-def catch_with_error_message(f):
-    @functools.wraps(f)
-    def wrapper(*args, **kwargs):
-        try:
-            result = f(*args, **kwargs)
-        except (PnmError, UnicodeDecodeError, ValueError, TypeError) as e:
-            # todo: add error message to message box
-            PnmFileErrorMessage().exec()
         else:
             return result
 
