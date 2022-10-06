@@ -2,9 +2,9 @@ from PyQt6.QtWidgets import QMessageBox
 
 
 class PnmFileErrorMessage(QMessageBox):
-    def __init__(self):
+    def __init__(self, message):
         super().__init__()
         self.setIcon(QMessageBox.Icon.Critical)
-        self.setText('Error')
-        self.setInformativeText('Invalid file')
-        self.setWindowTitle('Error')
+        self.setInformativeText(message)
+        self.setWindowTitle(message)
+        self.exec()

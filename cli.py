@@ -3,7 +3,7 @@ from PyQt6.QtWidgets import QApplication
 
 from src.decorators import catch
 from src.files.pnm import PnmFile
-from src.ui.pnm import Painter, PnmWidget
+from src.ui.pnm import PnmWidget
 
 
 @catch
@@ -34,10 +34,8 @@ def write_pnm(
 
 def ui():
     app = QApplication([])
-    painter = Painter('./docs/lol.pnm')
-    painter.show()
-    # pnm_window = PnmWidget()
-    # pnm_window.show()
+    pnm_window = PnmWidget()
+    pnm_window.show()
     app.exec()
 
 

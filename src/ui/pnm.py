@@ -1,53 +1,47 @@
-from PyQt6.QtGui import QPainter, QColor
+from PyQt6.QtGui import QPainter, QColor, QPaintEvent
 from PyQt6.QtWidgets import QPushButton, QWidget, QFileDialog, QVBoxLayout
 
-from src.decorators import catch_with_error_message
+from src.errors.pnm import PnmError
 from src.files.pnm import PnmFile
+from src.ui.errors import PnmFileErrorMessage
 
 
 class PnmWidget(QWidget):
+    selected_file = None
+
     def __init__(self):
         super().__init__()
         layout = QVBoxLayout()
-        layout.addWidget(SelectFileButton())
         self.setWindowTitle("Pnm reader")
         self.setGeometry(0, 0, 500, 500)
         self.setLayout(layout)
-
-
-class SelectFileButton(QPushButton):
-    def __init__(self):
-        super().__init__()
-        self.setText("Select file")
+        self.button = QPushButton("Render image")
+        layout.addWidget(self.button)
         # noinspection PyUnresolvedReferences
-        self.clicked.connect(self.get_file)
+        self.button.clicked.connect(self.select_file)
 
-    @catch_with_error_message
-    def get_file(self, *args, **kwargs):
-        filename = QFileDialog.getOpenFileName(self, "Open File", "", "")
-        with PnmFile(filename[0], mode='rb') as reader:
-            content = reader.read_all()
+    def select_file(self):
+        self.selected_file = QFileDialog.getOpenFileName(self, "Open File", "", "")[0]
+        self.update()
 
-        print('valid')
-        ...
-
-
-class Painter(QWidget):
-    def __init__(self, image_path: str):
-        super().__init__()
-        self.image_path = image_path
-
-    def paintEvent(self, event):
-        qp = QPainter()
-        qp.begin(self)
-        self.draw_picture(qp)
-        qp.end()
+    def paintEvent(self, event: QPaintEvent):
+        QWidget.paintEvent(self, event)
+        if self.selected_file:
+            qp = QPainter()
+            qp.begin(self)
+            self.draw_picture(qp)
+            qp.end()
 
     def draw_picture(self, qp):
-        # todo: he draws a picture all right, but it's
-        #  done always when the window is resized or closed etc.
-        with PnmFile(self.image_path, mode='rb') as reader:
-            content = reader.read_all()
+        try:
+            # todo: he draws a picture all right, but it's
+            #  done always when the window is resized or closed etc.
+            with PnmFile(self.selected_file, mode='rb') as reader:
+                content = reader.read_all()
+        except (PnmError, UnicodeDecodeError, ValueError, TypeError) as e:
+            PnmFileErrorMessage(str(e))  # fixme:  Recursive repaint detected
+            self.selected_file = None
+            return
 
         # it's doesn't work with picture have width more than screen width
         # it's doesn't work with picture have height more than screen height
