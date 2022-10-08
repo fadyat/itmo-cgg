@@ -1,10 +1,16 @@
-from PyQt6.QtGui import QPainter, QColor, QPaintEvent
+import enum
+import logging
+import typing
+
+from PyQt6 import QtGui
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QPainter, QColor
 from PyQt6.QtWidgets import (
+    QMainWindow,
     QPushButton,
-    QWidget,
     QFileDialog,
+    QWidget,
     QVBoxLayout,
-    QApplication,
     QPlainTextEdit,
 )
 
@@ -13,133 +19,144 @@ from src.files.pnm import PnmFile
 from src.ui.errors import PnmFileErrorMessage
 
 
-# todo: split class into smaller ones
-class PnmWidget(QWidget):
-    render_button: QPushButton = ...
-    selected_file: str | None = None
-    is_rendering: bool = False
+class Option(enum.Enum):
+    NOTHING = 0
+    RENDER = 1
+    EDITING = 2
 
-    def __init__(self):
+
+class EditFileWindow(QWidget):
+
+    def __init__(
+        self,
+    ):
         super().__init__()
+        self.setWindowTitle('Edit PNM file')
         self.setGeometry(0, 0, 500, 500)
-        self.centralize()
-        self.setWindowTitle("Pnm reader")
         self.setLayout(QVBoxLayout())
-        self.setup_render_button()
-        self.setup_edit_button()
 
-    def centralize(self):
-        qr = self.frameGeometry()
-        qr.moveCenter(self.screen().availableGeometry().center())
-        self.move(qr.topLeft())
+        self.save_button = QPushButton('Save', self)
+        self.save_button.clicked.connect(self.save_changes)  # type: ignore
 
-    def setup_render_button(self):
-        self.render_button = QPushButton("Render image")
+        self.text_field = QPlainTextEdit(self)
+        self.layout().addWidget(self.text_field)
+        self.layout().addWidget(self.save_button)
+
+    def edit_file(
+        self,
+        content: typing.Tuple[int],
+    ):
+        self.text_field.setPlainText(
+            ' '.join((str(x) for x in content))
+        )
+
+    def save_changes(
+        self,
+    ):
+        ...
+
+
+class Window(QMainWindow):
+    option = Option.NOTHING
+    selected_file: str = ...
+
+    def __init__(
+        self,
+    ):
+        super().__init__()
+        self.setWindowTitle("Test")
+        self.setWindowState(Qt.WindowState.WindowMaximized)
+
+        self.render_button = QPushButton("Click me", self)
         # noinspection PyUnresolvedReferences
-        self.render_button.clicked.connect(self.select_file_for_rendering)
-        self.layout().addWidget(self.render_button)
+        self.render_button.clicked.connect(self.render_image)
 
-    def setup_edit_button(self):
-        edit_button = QPushButton("Edit image")
+        self.clear_picture_button = QPushButton("Clear", self)
         # noinspection PyUnresolvedReferences
-        edit_button.clicked.connect(self.select_file_for_editing)
-        self.layout().addWidget(edit_button)
+        self.clear_picture_button.clicked.connect(self.clear_picture)
 
-    def select_file_for_rendering(self):
+        self.edit_file_button = QPushButton("Edit file", self)
+        # noinspection PyUnresolvedReferences
+        self.edit_file_button.clicked.connect(self.edit_file_content)
+
+        self.toolbar = self.addToolBar("Toolbar")
+        self.toolbar.addWidget(self.render_button)
+        self.toolbar.addWidget(self.edit_file_button)
+        self.toolbar.addWidget(self.clear_picture_button)
+        self.toolbar.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
+
+        self.edit_file_window = EditFileWindow()
+
+    def render_image(self):
         self.selected_file = QFileDialog.getOpenFileName(self, "Open File", "", "")[0]
-        self.is_rendering = True
-        self.update()
-
-    def select_file_for_editing(self):
-        self.selected_file = QFileDialog.getOpenFileName(self, "Open File", "", "")[0]
-        self.is_rendering = False
-        self.update()
-
-    def paintEvent(self, event: QPaintEvent):
-        QWidget.paintEvent(self, event)
         if not self.selected_file:
             return
 
-        if self.is_rendering:
-            qp = QPainter()
-            qp.begin(self)
-            self.render_picture(qp)
-            qp.end()
-        else:
-            ...
+        self.option = Option.RENDER
+        self.update()
 
-    def render_picture(self, qp):
-        try:
-            # todo: he draws a picture all right, but it's
-            #  done always when the window is resized or closed etc.
-            with PnmFile(self.selected_file, mode='rb') as reader:
-                content = reader.read_all()
-        except (PnmError, UnicodeDecodeError, ValueError, TypeError) as e:
-            PnmFileErrorMessage(
-                message=str(e),
-                parent=self,
-            ).show()
-            self.selected_file = None
+    def clear_picture(self):
+        self.option = Option.NOTHING
+        self.update()
+
+    def edit_file_content(self):
+        self.selected_file = QFileDialog.getOpenFileName(self, "Open File", "", "")[0]
+        if not self.selected_file:
             return
 
-        # it's doesn't work with picture have width more than screen width
-        # it's doesn't work with picture have height more than screen height
-        self.setGeometry(0, 0, reader.width, reader.height)
+        self.option = Option.EDITING
+        logs.info('Edit file')
+        try:
+            with PnmFile(self.selected_file, mode='rb') as reader:
+                content = reader.read_for_ui()
+        except (PnmError, UnicodeDecodeError, ValueError, TypeError) as e:
+            PnmFileErrorMessage(str(e), self, logs).show()
+            return
 
-        # todo: optimize this
+        self.edit_file_window.show()
+        self.edit_file_window.edit_file(content)
+
+    def real_render_image(self):
+        painter = QPainter(self)
+        try:
+            with PnmFile(self.selected_file, mode='rb') as reader:
+                content = reader.read()
+        except (PnmError, UnicodeDecodeError, ValueError, TypeError) as e:
+            PnmFileErrorMessage(str(e), self, logs).show()
+            return
+
         for i in range(
             0,
             reader.width * reader.height * reader.bytes_per_pixel,
             reader.bytes_per_pixel,
         ):
-            qp.setPen(QColor(content[i], content[i + 1], content[i + 2]))
+            painter.setPen(QColor(content[i], content[i + 1], content[i + 2]))
             real_position = i // reader.bytes_per_pixel
-            qp.drawPoint(real_position % reader.width, real_position // reader.width)
+            painter.drawPoint(
+                real_position % reader.width,
+                real_position // reader.width
+            )
+        painter.end()
 
-    def edit_picture(self, qp):
-        with PnmFile(self.selected_file, mode='rb') as reader:
-            content = reader.read_all()
+    def paintEvent(
+        self,
+        e: QtGui.QPaintEvent,
+    ):
+        logs.info('Paint event')
+        match self.option:
+            case Option.NOTHING:
+                logs.info('Nothing to do')
+                pass
+            case Option.RENDER:
+                logs.info('Render image')
+                self.real_render_image()
 
-
-class TextEditor(QWidget):
-    text_edit: QPlainTextEdit = ...
-
-    def __init__(self):
-        super().__init__()
-        self.setLayout(QVBoxLayout())
-        self.setGeometry(400, 400, 350, 300)
-        self.setup_text_edit()
-
-    def setup_text_edit(self):
-        # todo: optimize file editing
-        # todo: pass file from select button
-        self.text_edit = QPlainTextEdit(self)
-        self.text_edit.resize(500, 500)
-        with PnmFile('../../docs/shrek.pnm', mode='rb') as reader:
-            content = reader.read_all()
-
-        # self.text_edit.setPlainText(str(content))
-        self.text_edit.setPlainText("hello")
-
-    def setup_save_edited_file_button(self):
-        save_button = QPushButton("Save")
-        # noinspection PyUnresolvedReferences
-        save_button.clicked.connect(self.save_edited_file)
-        self.layout().addWidget(save_button)
-
-    def save_edited_file(self):
-        # todo: save edited file
-        # understand to read it correct??
-        # using self.text_edit.toPlainText()
-        ...
+        self.option = Option.NOTHING
 
 
-def main():
-    app = QApplication([])
-    editor = TextEditor()
-    editor.show()
-    app.exec()
-
-
-if __name__ == '__main__':
-    main()
+# fixme
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+)
+logs = logging.getLogger(__name__)
