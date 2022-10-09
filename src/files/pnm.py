@@ -104,14 +104,14 @@ class PnmFile:
         pnm_format: str,
         height: int,
         width: int,
-        image_content: typing.Sequence[typedef.color_code],
+        image_content: typing.Tuple[typedef.color_code],
         max_color_value: typedef.color_code = 255,
     ):
         validate_file(self.__file)  # type: ignore
         validate_image_content(
-            image_content,
-            width,
-            height,
+            image_content=image_content,
+            width=width,
+            height=height,
             bytes_per_pixel=config.PNM_BYTES_PER_PIXEL[pnm_format],
         )
 

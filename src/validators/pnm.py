@@ -50,7 +50,7 @@ def validate_file(
 
 
 def validate_image_content(
-    image_content: typing.Sequence[typedef.color_code],
+    image_content: typing.Tuple[typedef.color_code],
     width: int,
     height: int,
     bytes_per_pixel: int,

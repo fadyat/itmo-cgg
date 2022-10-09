@@ -1,5 +1,6 @@
 import enum
 import logging
+import os
 import typing
 
 from PyQt6 import QtGui
@@ -16,6 +17,7 @@ from PyQt6.QtWidgets import (
     QLabel,
 )
 
+from src import typedef
 from src.errors.pnm import PnmError
 from src.files.pnm import PnmFile
 from src.ui.errors import PnmFileErrorMessage
@@ -25,9 +27,12 @@ class Option(enum.Enum):
     NOTHING = 0
     RENDER = 1
     EDITING = 2
+    PREVIEW = 3
 
 
 class EditFileWindow(QWidget):
+    option = Option.NOTHING
+
     def __init__(
         self,
     ):
@@ -38,18 +43,19 @@ class EditFileWindow(QWidget):
         self.save_button = QPushButton('Save', self)
         self.save_button.clicked.connect(self.save_changes)  # type: ignore
 
+        # self.preview_button = QPushButton('Preview', self)
+        # self.preview_button.clicked.connect(self.preview_changes)  # type: ignore
+
         self.picture_format = QLineEdit(self)
         self.picture_width = QLineEdit(self)
         self.picture_height = QLineEdit(self)
         self.picture_max_color = QLineEdit(self)
-        self.picture_bytes_per_pixel = QLineEdit(self)
         self.picture_content = QPlainTextEdit(self)
 
         self.picture_format_label = QLabel('Format', self)
         self.picture_width_label = QLabel('Width', self)
         self.picture_height_label = QLabel('Height', self)
         self.picture_max_color_label = QLabel('Max color', self)
-        self.picture_bytes_per_pixel_label = QLabel('Bytes per pixel', self)
         self.picture_content_label = QLabel('Content', self)
 
         # todo: create functions for adding widgets
@@ -67,9 +73,6 @@ class EditFileWindow(QWidget):
 
         self.layout().addWidget(self.picture_max_color_label)
         self.layout().addWidget(self.picture_max_color)
-
-        self.layout().addWidget(self.picture_bytes_per_pixel_label)
-        self.layout().addWidget(self.picture_bytes_per_pixel)
 
         self.layout().addWidget(self.picture_content_label)
         self.layout().addWidget(self.picture_content)
@@ -89,21 +92,56 @@ class EditFileWindow(QWidget):
         self.picture_width.setText(str(width))
         self.picture_height.setText(str(height))
         self.picture_max_color.setText(str(max_color))
-        self.picture_bytes_per_pixel.setText(str(bytes_per_pixel))
         self.picture_content.setPlainText(' '.join((str(x) for x in content)))
 
     def save_changes(
         self,
     ):
         saved_file = QFileDialog.getSaveFileName(self, "Save File", "", "")[0]
+
         if not saved_file:
             return
 
-        # todo: add validation
-        # todo: add file saving
-        ...
+        try:
+            with PnmFile(saved_file, 'wb') as f:
+                f.write(
+                    pnm_format=self.picture_format.text(),
+                    width=int(self.picture_width.text()),
+                    height=int(self.picture_height.text()),
+                    image_content=tuple(
+                        typedef.color_code(x)
+                        for x in self.picture_content.toPlainText().split()
+                    ),
+                    max_color_value=int(self.picture_max_color.text()),
+                )
+        except (PnmError, UnicodeDecodeError, ValueError, TypeError) as e:
+            PnmFileErrorMessage(str(e), self, logs).show()
+            if not os.path.getsize(saved_file):
+                os.remove(saved_file)
+            return
 
         self.close()
+
+    def preview_changes(
+        self,
+    ):
+        ...
+
+    def real_preview_changes(
+        self,
+    ):
+        painter = QPainter(self)
+        ...
+
+    def paintEvent(
+        self,
+        e: QtGui.QPaintEvent,
+    ):
+        match self.option:
+            case Option.NOTHING:
+                pass
+            case Option.PREVIEW:
+                ...
 
 
 class Window(QMainWindow):
@@ -187,7 +225,7 @@ class Window(QMainWindow):
             reader.width * reader.height * reader.bytes_per_pixel,
             reader.bytes_per_pixel,
         ):
-            painter.setPen(QColor(content[i], content[i + 1], content[i + 2]))
+            painter.setPen(QColor(*content[i:i + reader.bytes_per_pixel]))
             real_position = i // reader.bytes_per_pixel
             painter.drawPoint(
                 real_position % reader.width, real_position // reader.width
