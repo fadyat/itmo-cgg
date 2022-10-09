@@ -12,6 +12,8 @@ from PyQt6.QtWidgets import (
     QWidget,
     QVBoxLayout,
     QPlainTextEdit,
+    QLineEdit,
+    QLabel,
 )
 
 from src.errors.pnm import PnmError
@@ -26,7 +28,6 @@ class Option(enum.Enum):
 
 
 class EditFileWindow(QWidget):
-
     def __init__(
         self,
     ):
@@ -34,26 +35,75 @@ class EditFileWindow(QWidget):
         self.setWindowTitle('Edit PNM file')
         self.setGeometry(0, 0, 500, 500)
         self.setLayout(QVBoxLayout())
-
         self.save_button = QPushButton('Save', self)
         self.save_button.clicked.connect(self.save_changes)  # type: ignore
 
-        self.text_field = QPlainTextEdit(self)
-        self.layout().addWidget(self.text_field)
+        self.picture_format = QLineEdit(self)
+        self.picture_width = QLineEdit(self)
+        self.picture_height = QLineEdit(self)
+        self.picture_max_color = QLineEdit(self)
+        self.picture_bytes_per_pixel = QLineEdit(self)
+        self.picture_content = QPlainTextEdit(self)
+
+        self.picture_format_label = QLabel('Format', self)
+        self.picture_width_label = QLabel('Width', self)
+        self.picture_height_label = QLabel('Height', self)
+        self.picture_max_color_label = QLabel('Max color', self)
+        self.picture_bytes_per_pixel_label = QLabel('Bytes per pixel', self)
+        self.picture_content_label = QLabel('Content', self)
+
+        # todo: create functions for adding widgets
+        # todo: make label and input widget in one line
+        # todo: add preview + preview update on button click
+
+        self.layout().addWidget(self.picture_format_label)
+        self.layout().addWidget(self.picture_format)
+
+        self.layout().addWidget(self.picture_width_label)
+        self.layout().addWidget(self.picture_width)
+
+        self.layout().addWidget(self.picture_height_label)
+        self.layout().addWidget(self.picture_height)
+
+        self.layout().addWidget(self.picture_max_color_label)
+        self.layout().addWidget(self.picture_max_color)
+
+        self.layout().addWidget(self.picture_bytes_per_pixel_label)
+        self.layout().addWidget(self.picture_bytes_per_pixel)
+
+        self.layout().addWidget(self.picture_content_label)
+        self.layout().addWidget(self.picture_content)
+
         self.layout().addWidget(self.save_button)
 
     def edit_file(
         self,
+        pnm_format: str,
+        width: int,
+        height: int,
+        max_color: int,
+        bytes_per_pixel: int,
         content: typing.Tuple[int],
     ):
-        self.text_field.setPlainText(
-            ' '.join((str(x) for x in content))
-        )
+        self.picture_format.setText(pnm_format)
+        self.picture_width.setText(str(width))
+        self.picture_height.setText(str(height))
+        self.picture_max_color.setText(str(max_color))
+        self.picture_bytes_per_pixel.setText(str(bytes_per_pixel))
+        self.picture_content.setPlainText(' '.join((str(x) for x in content)))
 
     def save_changes(
         self,
     ):
+        saved_file = QFileDialog.getSaveFileName(self, "Save File", "", "")[0]
+        if not saved_file:
+            return
+
+        # todo: add validation
+        # todo: add file saving
         ...
+
+        self.close()
 
 
 class Window(QMainWindow):
@@ -67,7 +117,7 @@ class Window(QMainWindow):
         self.setWindowTitle("Test")
         self.setWindowState(Qt.WindowState.WindowMaximized)
 
-        self.render_button = QPushButton("Click me", self)
+        self.render_button = QPushButton("Render image", self)
         # noinspection PyUnresolvedReferences
         self.render_button.clicked.connect(self.render_image)
 
@@ -75,7 +125,7 @@ class Window(QMainWindow):
         # noinspection PyUnresolvedReferences
         self.clear_picture_button.clicked.connect(self.clear_picture)
 
-        self.edit_file_button = QPushButton("Edit file", self)
+        self.edit_file_button = QPushButton("Edit image", self)
         # noinspection PyUnresolvedReferences
         self.edit_file_button.clicked.connect(self.edit_file_content)
 
@@ -114,7 +164,14 @@ class Window(QMainWindow):
             return
 
         self.edit_file_window.show()
-        self.edit_file_window.edit_file(content)
+        self.edit_file_window.edit_file(
+            pnm_format=reader.pnm_format,
+            width=reader.width,
+            height=reader.height,
+            max_color=reader.max_color_value,
+            bytes_per_pixel=reader.bytes_per_pixel,
+            content=content,
+        )
 
     def real_render_image(self):
         painter = QPainter(self)
@@ -133,8 +190,7 @@ class Window(QMainWindow):
             painter.setPen(QColor(content[i], content[i + 1], content[i + 2]))
             real_position = i // reader.bytes_per_pixel
             painter.drawPoint(
-                real_position % reader.width,
-                real_position // reader.width
+                real_position % reader.width, real_position // reader.width
             )
         painter.end()
 

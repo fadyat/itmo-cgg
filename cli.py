@@ -8,7 +8,8 @@ from src.ui.pnm import Window
 
 def ui():
     app = QApplication(sys.argv)
-    Window().show()
+    w = Window()
+    w.show()
     sys.exit(app.exec())
 
 
