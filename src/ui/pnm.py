@@ -160,7 +160,9 @@ class Window(QMainWindow):
 
         self.edit_file_window = EditFileWindow()
 
-    def render_image(self):
+    def render_image(
+        self,
+    ):
         self.selected_file = QFileDialog.getOpenFileName(self, "Open File", "", "")[0]
         if not self.selected_file:
             return
@@ -168,11 +170,15 @@ class Window(QMainWindow):
         self.option = Option.RENDER
         self.update()
 
-    def clear_picture(self):
+    def clear_picture(
+        self,
+    ):
         self.option = Option.NOTHING
         self.update()
 
-    def edit_file_content(self):
+    def edit_file_content(
+        self,
+    ):
         logs.info('Edit file')
         self.selected_file = QFileDialog.getOpenFileName(self, "Open File", "", "")[0]
         if not self.selected_file:
@@ -195,7 +201,9 @@ class Window(QMainWindow):
             content=content,
         )
 
-    def real_render_image(self):
+    def real_render_image(
+        self,
+    ):
         painter = QPainter(self)
         try:
             with PnmFile(self.selected_file, mode='rb') as reader:

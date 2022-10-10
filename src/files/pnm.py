@@ -33,7 +33,12 @@ class PnmFile:
         self.__file = open(self.__image_path, self.mode)  # type: ignore
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(
+        self,
+        exc_type,
+        exc_val,
+        exc_tb,
+    ):
         self.__file.close()
         self.__file = None
 
