@@ -1,5 +1,4 @@
 import enum
-import logging
 import os
 import typing
 
@@ -17,9 +16,9 @@ from PyQt6.QtWidgets import (
     QLabel,
 )
 
-from src import typedef
 from src.errors.pnm import PnmError
 from src.files.pnm import PnmFile
+from src.typedef import logs
 from src.ui.errors import PnmFileErrorMessage
 
 
@@ -31,7 +30,16 @@ class Option(enum.Enum):
 
 
 class EditFileWindow(QWidget):
-    option = Option.NOTHING
+    picture_format: QLineEdit
+    picture_format_label: QLabel
+    picture_width: QLineEdit
+    picture_width_label: QLabel
+    picture_height: QLineEdit
+    picture_height_label: QLabel
+    picture_max_color: QLineEdit
+    picture_max_color_label: QLabel
+    picture_content: QPlainTextEdit
+    picture_content_label: QLabel
 
     def __init__(
         self,
@@ -40,44 +48,44 @@ class EditFileWindow(QWidget):
         self.setWindowTitle('Edit PNM file')
         self.setGeometry(0, 0, 500, 500)
         self.setLayout(QVBoxLayout())
+
         self.save_button = QPushButton('Save', self)
         self.save_button.clicked.connect(self.save_changes)  # type: ignore
+        self.layout().addWidget(self.save_button)
 
-        # self.preview_button = QPushButton('Preview', self)
-        # self.preview_button.clicked.connect(self.preview_changes)  # type: ignore
+        self.setup_header()
+        self.setup_content()
 
+    def setup_header(
+        self,
+    ):
         self.picture_format = QLineEdit(self)
-        self.picture_width = QLineEdit(self)
-        self.picture_height = QLineEdit(self)
-        self.picture_max_color = QLineEdit(self)
-        self.picture_content = QPlainTextEdit(self)
-
         self.picture_format_label = QLabel('Format', self)
-        self.picture_width_label = QLabel('Width', self)
-        self.picture_height_label = QLabel('Height', self)
-        self.picture_max_color_label = QLabel('Max color', self)
-        self.picture_content_label = QLabel('Content', self)
-
-        # todo: create functions for adding widgets
-        # todo: make label and input widget in one line
-        # todo: add preview + preview update on button click
-
         self.layout().addWidget(self.picture_format_label)
         self.layout().addWidget(self.picture_format)
 
+        self.picture_width = QLineEdit(self)
+        self.picture_width_label = QLabel('Width', self)
         self.layout().addWidget(self.picture_width_label)
         self.layout().addWidget(self.picture_width)
 
+        self.picture_height = QLineEdit(self)
+        self.picture_height_label = QLabel('Height', self)
         self.layout().addWidget(self.picture_height_label)
         self.layout().addWidget(self.picture_height)
 
+        self.picture_max_color = QLineEdit(self)
+        self.picture_max_color_label = QLabel('Max color', self)
         self.layout().addWidget(self.picture_max_color_label)
         self.layout().addWidget(self.picture_max_color)
 
+    def setup_content(
+        self,
+    ):
+        self.picture_content = QPlainTextEdit(self)
+        self.picture_content_label = QLabel('Content', self)
         self.layout().addWidget(self.picture_content_label)
         self.layout().addWidget(self.picture_content)
-
-        self.layout().addWidget(self.save_button)
 
     def edit_file(
         self,
@@ -85,7 +93,6 @@ class EditFileWindow(QWidget):
         width: int,
         height: int,
         max_color: int,
-        bytes_per_pixel: int,
         content: typing.Tuple[int],
     ):
         self.picture_format.setText(pnm_format)
@@ -97,9 +104,9 @@ class EditFileWindow(QWidget):
     def save_changes(
         self,
     ):
-        saved_file = QFileDialog.getSaveFileName(self, "Save File", "", "")[0]
-
-        if not saved_file:
+        if not (
+            saved_file := QFileDialog.getSaveFileName(self, "Save File", "", "")[0]
+        ):
             return
 
         try:
@@ -109,8 +116,7 @@ class EditFileWindow(QWidget):
                     width=int(self.picture_width.text()),
                     height=int(self.picture_height.text()),
                     image_content=tuple(
-                        typedef.color_code(x)
-                        for x in self.picture_content.toPlainText().split()
+                        int(x) for x in self.picture_content.toPlainText().split()
                     ),
                     max_color_value=int(self.picture_max_color.text()),
                 )
@@ -121,27 +127,6 @@ class EditFileWindow(QWidget):
             return
 
         self.close()
-
-    def preview_changes(
-        self,
-    ):
-        ...
-
-    def real_preview_changes(
-        self,
-    ):
-        painter = QPainter(self)
-        ...
-
-    def paintEvent(
-        self,
-        e: QtGui.QPaintEvent,
-    ):
-        match self.option:
-            case Option.NOTHING:
-                pass
-            case Option.PREVIEW:
-                ...
 
 
 class Window(QMainWindow):
@@ -188,12 +173,12 @@ class Window(QMainWindow):
         self.update()
 
     def edit_file_content(self):
+        logs.info('Edit file')
         self.selected_file = QFileDialog.getOpenFileName(self, "Open File", "", "")[0]
         if not self.selected_file:
             return
 
         self.option = Option.EDITING
-        logs.info('Edit file')
         try:
             with PnmFile(self.selected_file, mode='rb') as reader:
                 content = reader.read_for_ui()
@@ -207,7 +192,6 @@ class Window(QMainWindow):
             width=reader.width,
             height=reader.height,
             max_color=reader.max_color_value,
-            bytes_per_pixel=reader.bytes_per_pixel,
             content=content,
         )
 
@@ -225,7 +209,7 @@ class Window(QMainWindow):
             reader.width * reader.height * reader.bytes_per_pixel,
             reader.bytes_per_pixel,
         ):
-            painter.setPen(QColor(*content[i:i + reader.bytes_per_pixel]))
+            painter.setPen(QColor(*content[i: i + reader.bytes_per_pixel]))
             real_position = i // reader.bytes_per_pixel
             painter.drawPoint(
                 real_position % reader.width, real_position // reader.width
@@ -236,21 +220,9 @@ class Window(QMainWindow):
         self,
         e: QtGui.QPaintEvent,
     ):
-        logs.info('Paint event')
         match self.option:
-            case Option.NOTHING:
-                logs.info('Nothing to do')
-                pass
             case Option.RENDER:
                 logs.info('Render image')
                 self.real_render_image()
 
         self.option = Option.NOTHING
-
-
-# fixme
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-)
-logs = logging.getLogger(__name__)

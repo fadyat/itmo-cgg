@@ -1,6 +1,6 @@
 import typing
 
-from src import config, typedef
+from src import config
 from src.errors.pnm import PnmError
 from src.validators.pnm import (
     validate_max_color,
@@ -51,7 +51,7 @@ class PnmFile:
 
     def read_for_ui(
         self,
-    ) -> typing.Tuple[typedef.color_code]:
+    ) -> typing.Tuple[int]:
         validate_file(self.__file)  # type: ignore
         self.__read_header()
 
@@ -95,7 +95,7 @@ class PnmFile:
 
     def __get_max_color_value(
         self,
-    ) -> typedef.color_code:
+    ) -> int:
         max_color_value = self.__read_line()
         return validate_max_color(max_color_value)
 
@@ -104,8 +104,8 @@ class PnmFile:
         pnm_format: str,
         height: int,
         width: int,
-        image_content: typing.Tuple[typedef.color_code],
-        max_color_value: typedef.color_code = 255,
+        image_content: typing.Tuple[int],
+        max_color_value: int = 255,
     ):
         validate_file(self.__file)  # type: ignore
         validate_image_content(
@@ -130,7 +130,7 @@ class PnmFile:
         pnm_format: str,
         height: int,
         width: int,
-        max_color_value: typedef.color_code,
+        max_color_value: int,
     ):
         self.__write_pnm_format(pnm_format)
         self.__write_file_size(width, height)
@@ -138,7 +138,7 @@ class PnmFile:
 
     def __write_body(
         self,
-        image_content: typing.Sequence[typedef.color_code],
+        image_content: typing.Sequence[int],
     ):
         for color_code in image_content:
             self.__file.write(color_code.to_bytes(1, 'big'))  # type: ignore
