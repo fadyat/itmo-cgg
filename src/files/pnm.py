@@ -109,7 +109,7 @@ class PnmFile:
         pnm_format: str,
         height: int,
         width: int,
-        image_content: typing.Tuple[int],
+        image_content: typing.Sequence[int],
         max_color_value: int = 255,
     ):
         validate_file(self.__file)  # type: ignore

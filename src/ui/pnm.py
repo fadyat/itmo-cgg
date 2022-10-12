@@ -11,10 +11,8 @@ from PyQt6.QtWidgets import (
     QFileDialog,
     QWidget,
     QVBoxLayout,
-    QPlainTextEdit,
     QLineEdit,
-    QLabel,
-)
+    QLabel, QTableWidget, QTableWidgetItem, )
 
 from src.errors.pnm import PnmError
 from src.files.pnm import PnmFile
@@ -32,14 +30,12 @@ class Option(enum.Enum):
 class EditFileWindow(QWidget):
     picture_format: QLineEdit
     picture_format_label: QLabel
-    picture_width: QLineEdit
-    picture_width_label: QLabel
-    picture_height: QLineEdit
-    picture_height_label: QLabel
+    resize_table_button: QPushButton
     picture_max_color: QLineEdit
     picture_max_color_label: QLabel
-    picture_content: QPlainTextEdit
+    picture_content: QTableWidget
     picture_content_label: QLabel
+    bytes_per_pixel: int
 
     def __init__(
         self,
@@ -49,12 +45,12 @@ class EditFileWindow(QWidget):
         self.setGeometry(0, 0, 500, 500)
         self.setLayout(QVBoxLayout())
 
+        self.setup_header()
+        self.setup_content()
+
         self.save_button = QPushButton('Save', self)
         self.save_button.clicked.connect(self.save_changes)
         self.layout().addWidget(self.save_button)
-
-        self.setup_header()
-        self.setup_content()
 
     def setup_header(
         self,
@@ -64,16 +60,6 @@ class EditFileWindow(QWidget):
         self.layout().addWidget(self.picture_format_label)
         self.layout().addWidget(self.picture_format)
 
-        self.picture_width = QLineEdit(self)
-        self.picture_width_label = QLabel('Width', self)
-        self.layout().addWidget(self.picture_width_label)
-        self.layout().addWidget(self.picture_width)
-
-        self.picture_height = QLineEdit(self)
-        self.picture_height_label = QLabel('Height', self)
-        self.layout().addWidget(self.picture_height_label)
-        self.layout().addWidget(self.picture_height)
-
         self.picture_max_color = QLineEdit(self)
         self.picture_max_color_label = QLabel('Max color', self)
         self.layout().addWidget(self.picture_max_color_label)
@@ -82,8 +68,10 @@ class EditFileWindow(QWidget):
     def setup_content(
         self,
     ):
-        self.picture_content = QPlainTextEdit(self)
+        self.picture_content = QTableWidget(self)
         self.picture_content_label = QLabel('Content', self)
+        self.picture_content.verticalHeader().hide()
+        self.picture_content.horizontalHeader().hide()
         self.layout().addWidget(self.picture_content_label)
         self.layout().addWidget(self.picture_content)
 
@@ -93,13 +81,41 @@ class EditFileWindow(QWidget):
         width: int,
         height: int,
         max_color: int,
+        bytes_per_pixel: int,
         content: typing.Tuple[int],
     ):
         self.picture_format.setText(pnm_format)
-        self.picture_width.setText(str(width))
-        self.picture_height.setText(str(height))
         self.picture_max_color.setText(str(max_color))
-        self.picture_content.setPlainText(' '.join((str(x) for x in content)))
+        self.picture_content_label.setText(f'Content {width}, {height}, {bytes_per_pixel}')
+        self.create_table(
+            width=width,
+            height=height,
+            bytes_per_pixel=bytes_per_pixel,
+            content=content,
+        )
+
+    def create_table(
+        self,
+        width: int,
+        height: int,
+        bytes_per_pixel: int,
+        content: typing.Optional[typing.Tuple[int]] = None,
+    ):
+        self.picture_content.setColumnCount(width)
+        self.picture_content.setRowCount(height)
+        for i in range(
+            0,
+            width * height * bytes_per_pixel,
+            bytes_per_pixel,
+        ):
+            real_position = i // bytes_per_pixel
+            self.picture_content.setItem(
+                real_position // width,
+                real_position % width,
+                QTableWidgetItem(','.join(
+                    str(x) for x in content[i: i + bytes_per_pixel]
+                ))
+            )
 
     def save_changes(
         self,
@@ -108,16 +124,21 @@ class EditFileWindow(QWidget):
             saved_file := QFileDialog.getSaveFileName(self, "Save File", "", "")[0]
         ):
             return
+        model = self.picture_content.model()
+        content = []
+        for i in range(model.rowCount()):
+            for j in range(model.columnCount()):
+                content.extend(
+                    [int(x) for x in model.index(i, j).data().split(',')]
+                )
 
         try:
             with PnmFile(saved_file, 'wb') as f:
                 f.write(
                     pnm_format=self.picture_format.text(),
-                    width=int(self.picture_width.text()),
-                    height=int(self.picture_height.text()),
-                    image_content=tuple(
-                        int(x) for x in self.picture_content.toPlainText().split()
-                    ),
+                    width=int(self.picture_content.model().columnCount()),
+                    height=int(self.picture_content.model().rowCount()),
+                    image_content=content,
                     max_color_value=int(self.picture_max_color.text()),
                 )
         except (PnmError, UnicodeDecodeError, ValueError, TypeError) as e:
@@ -195,6 +216,7 @@ class Window(QMainWindow):
             width=reader.width,
             height=reader.height,
             max_color=reader.max_color_value,
+            bytes_per_pixel=reader.bytes_per_pixel,
             content=content,
         )
 
