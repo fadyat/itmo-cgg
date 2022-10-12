@@ -50,7 +50,7 @@ class EditFileWindow(QWidget):
         self.setLayout(QVBoxLayout())
 
         self.save_button = QPushButton('Save', self)
-        self.save_button.clicked.connect(self.save_changes)  # type: ignore
+        self.save_button.clicked.connect(self.save_changes)
         self.layout().addWidget(self.save_button)
 
         self.setup_header()
@@ -137,19 +137,16 @@ class Window(QMainWindow):
         self,
     ):
         super().__init__()
-        self.setWindowTitle("Test")
+        self.setWindowTitle("Best redactor ever")
         self.setWindowState(Qt.WindowState.WindowMaximized)
 
         self.render_button = QPushButton("Render image", self)
-        # noinspection PyUnresolvedReferences
         self.render_button.clicked.connect(self.render_image)
 
         self.clear_picture_button = QPushButton("Clear", self)
-        # noinspection PyUnresolvedReferences
         self.clear_picture_button.clicked.connect(self.clear_picture)
 
         self.edit_file_button = QPushButton("Edit image", self)
-        # noinspection PyUnresolvedReferences
         self.edit_file_button.clicked.connect(self.edit_file_content)
 
         self.toolbar = self.addToolBar("Toolbar")
@@ -228,9 +225,10 @@ class Window(QMainWindow):
         self,
         e: QtGui.QPaintEvent,
     ):
-        match self.option:
-            case Option.RENDER:
-                logs.info('Render image')
-                self.real_render_image()
+        if self.option == Option.RENDER:
+            logs.info('Render image')
+            self.real_render_image()
 
+        # setting option for nothing
+        # because when resizing window it's reading file again
         self.option = Option.NOTHING

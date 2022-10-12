@@ -150,7 +150,7 @@ class PnmFile:
 
     def __write_line(
         self,
-        line: str | int,
+        line: typing.Union[str, int],
     ):
         self.__file.write(f"{line}\n".encode('utf-8'))  # type: ignore
 

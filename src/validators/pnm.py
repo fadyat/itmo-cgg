@@ -5,7 +5,7 @@ from src.errors.pnm import PnmHeaderError, PnmError
 
 
 def validate_max_color(
-    max_color_value: str | int,
+    max_color_value: typing.Union[str, int],
 ) -> int:
     try:
         max_color_value = int(max_color_value)
@@ -19,7 +19,7 @@ def validate_max_color(
 
 
 def validate_width_and_height(
-    file_size: str | typing.Tuple[int, int],
+    file_size: typing.Union[str, typing.Tuple[int, int]],
 ) -> typing.Tuple[int, int]:
     try:
         if isinstance(file_size, str):
