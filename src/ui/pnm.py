@@ -12,7 +12,10 @@ from PyQt6.QtWidgets import (
     QWidget,
     QVBoxLayout,
     QLineEdit,
-    QLabel, QTableWidget, QTableWidgetItem, )
+    QLabel,
+    QTableWidget,
+    QTableWidgetItem,
+)
 
 from src.errors.pnm import PnmError
 from src.files.pnm import PnmFile
@@ -35,7 +38,6 @@ class EditFileWindow(QWidget):
     picture_max_color_label: QLabel
     picture_content: QTableWidget
     picture_content_label: QLabel
-    bytes_per_pixel: int
 
     def __init__(
         self,
@@ -86,7 +88,9 @@ class EditFileWindow(QWidget):
     ):
         self.picture_format.setText(pnm_format)
         self.picture_max_color.setText(str(max_color))
-        self.picture_content_label.setText(f'Content {width}, {height}, {bytes_per_pixel}')
+        self.picture_content_label.setText(
+            f'Content {width}, {height}, {bytes_per_pixel}'
+        )
         self.create_table(
             width=width,
             height=height,
@@ -110,27 +114,24 @@ class EditFileWindow(QWidget):
         ):
             real_position = i // bytes_per_pixel
             self.picture_content.setItem(
-                real_position // width,
-                real_position % width,
-                QTableWidgetItem(','.join(
-                    str(x) for x in content[i: i + bytes_per_pixel]
-                ))
+                column=real_position % width,
+                row=real_position // width,
+                item=QTableWidgetItem(
+                    ','.join(str(x) for x in content[i : i + bytes_per_pixel])
+                ),
             )
 
     def save_changes(
         self,
     ):
-        if not (
-            saved_file := QFileDialog.getSaveFileName(self, "Save File", "", "")[0]
-        ):
+        saved_file = QFileDialog.getSaveFileName(self, "Save File", "", "")[0]
+        if not saved_file:
             return
         model = self.picture_content.model()
         content = []
         for i in range(model.rowCount()):
             for j in range(model.columnCount()):
-                content.extend(
-                    [int(x) for x in model.index(i, j).data().split(',')]
-                )
+                content.extend([int(x) for x in model.index(i, j).data().split(',')])
 
         try:
             with PnmFile(saved_file, 'wb') as f:
@@ -236,7 +237,7 @@ class Window(QMainWindow):
             reader.width * reader.height * reader.bytes_per_pixel,
             reader.bytes_per_pixel,
         ):
-            painter.setPen(QColor(*content[i: i + reader.bytes_per_pixel]))
+            painter.setPen(QColor(*content[i : i + reader.bytes_per_pixel]))
             real_position = i // reader.bytes_per_pixel
             painter.drawPoint(
                 real_position % reader.width, real_position // reader.width
