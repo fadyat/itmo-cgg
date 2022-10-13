@@ -16,5 +16,14 @@ class PnmError(Exception):
         return self.message
 
 
-class PnmHeaderError(PnmError):
+class PnmColorError(PnmError):
     ...
+
+
+class PnmSizeError(PnmError):
+    ...
+
+
+class PnmFormatError(PnmError):
+    ...
+

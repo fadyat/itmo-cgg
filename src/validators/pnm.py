@@ -1,14 +1,15 @@
 import typing
 
 from src import config
-from src.errors.pnm import PnmHeaderError, PnmError
+from src.errors.pnm import PnmError, PnmColorError, PnmSizeError, PnmFormatError
 
 
 def validate_color_value(
-    color_value: typing.Union[int, str],
+    color_value: int,
+    max_color_value: int,
 ):
-    if color_value > 255:
-        raise PnmHeaderError('Color value "%s" is too big' % color_value)
+    if color_value > max_color_value:
+        raise PnmColorError('Color value "%s" is too big' % color_value)
 
 
 def validate_max_color(
@@ -17,10 +18,13 @@ def validate_max_color(
     try:
         max_color_value = int(max_color_value)
     except ValueError:
-        raise PnmHeaderError('Invalid max color value "%s"' % max_color_value)
+        raise PnmColorError('Invalid max color value "%s"' % max_color_value)
 
     if max_color_value > 255:
-        raise PnmHeaderError('Max color value "%s" is too big' % max_color_value)
+        raise PnmColorError('Max color value "%s" is too big' % max_color_value)
+
+    if max_color_value < 0:
+        raise PnmColorError('Max color value "%s" is too small' % max_color_value)
 
     return max_color_value
 
@@ -34,7 +38,10 @@ def validate_width_and_height(
         else:
             width, height = file_size
     except ValueError:
-        raise PnmHeaderError('Invalid file size "%s"' % file_size)
+        raise PnmSizeError('Invalid file size "%s"' % file_size)
+
+    if width <= 0 or height <= 0:
+        raise PnmSizeError('Invalid file size "%s"' % file_size)
 
     return width, height
 
@@ -44,7 +51,7 @@ def validate_pnm_format(
     supported_formats: typing.Tuple[str, ...] = config.PNM_SUPPORTED_FORMATS,
 ):
     if pnm_format not in supported_formats:
-        raise PnmHeaderError('Unsupported format "%s"' % pnm_format)
+        raise PnmFormatError('Unsupported format "%s"' % pnm_format)
 
     return pnm_format
 
@@ -60,9 +67,11 @@ def validate_image_content(
     image_content: typing.Sequence[int],
     width: int,
     height: int,
-    bytes_per_pixel: int,
+    pnm_format: str,
 ):
+    validate_pnm_format(pnm_format)
+    bytes_per_pixel = config.PNM_BYTES_PER_PIXEL[pnm_format]
     if len(image_content) // width != bytes_per_pixel * height:
-        raise PnmError('Invalid image content size')
+        raise PnmSizeError('Invalid image content size')
 
     return image_content
