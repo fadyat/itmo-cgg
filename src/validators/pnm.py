@@ -4,6 +4,13 @@ from src import config
 from src.errors.pnm import PnmHeaderError, PnmError
 
 
+def validate_color_value(
+    color_value: typing.Union[int, str],
+):
+    if color_value > 255:
+        raise PnmHeaderError('Color value "%s" is too big' % color_value)
+
+
 def validate_max_color(
     max_color_value: typing.Union[str, int],
 ) -> int:

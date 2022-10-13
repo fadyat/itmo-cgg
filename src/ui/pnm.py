@@ -137,11 +137,13 @@ class EditFileWindow(QWidget):
         if not saved_file:
             return
 
+        bytes_per_pixel = config.PNM_BYTES_PER_PIXEL[self.picture_format.currentText()]
+        actual_width = int(self.picture_content.model().columnCount()) // bytes_per_pixel
         try:
             with PnmFile(saved_file, 'wb') as f:
                 f.write(
                     pnm_format=self.picture_format.currentText(),
-                    width=int(self.picture_content.model().columnCount()),
+                    width=actual_width,
                     height=int(self.picture_content.model().rowCount()),
                     image_content=self.get_table_content(),
                     max_color_value=int(self.picture_max_color.text()),
@@ -163,7 +165,9 @@ class EditFileWindow(QWidget):
         )
 
     def resize_table(self):
-        new_bytes_per_pixel = config.PNM_BYTES_PER_PIXEL[self.picture_format.currentText()]
+        new_bytes_per_pixel = config.PNM_BYTES_PER_PIXEL[
+            self.picture_format.currentText()
+        ]
         new_width = (self.picture_content.model().columnCount()) // new_bytes_per_pixel
         self.picture_content_label.setText(
             f'Content {new_width}, '
