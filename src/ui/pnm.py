@@ -64,7 +64,7 @@ class EditFileWindow(QWidget):
         self.picture_format = QComboBox(self)
         self.picture_format.addItems(config.PNM_SUPPORTED_FORMATS)
         self.picture_format_label = QLabel('Format', self)
-        # self.picture_format.currentIndexChanged.connect(self.resize_table_action)
+        self.picture_format.currentIndexChanged.connect(self.resize_table)
         format_layout.addWidget(self.picture_format_label)
         format_layout.addWidget(self.picture_format)
         self.layout().addLayout(format_layout)  # type: ignore
@@ -118,20 +118,16 @@ class EditFileWindow(QWidget):
         self.picture_content_label.setText(
             f'Content {width}, {height}, {bytes_per_pixel}'
         )
-        self.picture_content.setColumnCount(width)
+        self.picture_content.setColumnCount(bytes_per_pixel * width)
         self.picture_content.setRowCount(height)
         for i in range(
             0,
             width * height * bytes_per_pixel,
-            bytes_per_pixel,
         ):
-            real_position = i // bytes_per_pixel
             self.picture_content.setItem(
-                real_position // width,
-                real_position % width,
-                QTableWidgetItem(
-                    ','.join(str(x) for x in content[i: i + bytes_per_pixel])
-                ),
+                i // (width * bytes_per_pixel),
+                i % (width * bytes_per_pixel),
+                QTableWidgetItem(str(content[i])),
             )
 
     def save_changes(
@@ -160,38 +156,20 @@ class EditFileWindow(QWidget):
 
     def get_table_content(self):
         model = self.picture_content.model()
-        content = []
-        for i in range(model.rowCount()):
-            for j in range(model.columnCount()):
-                content.extend([int(x) for x in model.index(i, j).data().split(',')])
+        return tuple(
+            int(model.index(i, j).data())
+            for i in range(model.rowCount())
+            for j in range(model.columnCount())
+        )
 
-        return content
-
-    # def resize_table_action(
-    #     self,
-    # ):
-    #     new_bytes_per_pixel = config.PNM_BYTES_PER_PIXEL[self.picture_format.currentText()]
-    #     previous_bytes_per_pixel = 3 if new_bytes_per_pixel == 1 else 1
-    #
-    #     self.resize_table(
-    #         width=int(self.picture_content.model().columnCount()) // previous_bytes_per_pixel,
-    #         height=int(self.picture_content.model().rowCount()),
-    #         bytes_per_pixel=new_bytes_per_pixel,
-    #     )
-
-    # def resize_table(
-    #     self,
-    #     width: int,
-    #     height: int,
-    #     bytes_per_pixel: int,
-    # ):
-    #     content = self.get_table_content()
-    #     self.create_table(
-    #         width=width,
-    #         height=height,
-    #         bytes_per_pixel=bytes_per_pixel,
-    #         content=content,
-    #     )
+    def resize_table(self):
+        new_bytes_per_pixel = config.PNM_BYTES_PER_PIXEL[self.picture_format.currentText()]
+        new_width = (self.picture_content.model().columnCount()) // new_bytes_per_pixel
+        self.picture_content_label.setText(
+            f'Content {new_width}, '
+            f'{self.picture_content.model().rowCount()}, '
+            f'{new_bytes_per_pixel}'
+        )
 
 
 class Window(QMainWindow):
