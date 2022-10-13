@@ -1,16 +1,17 @@
+import sys
+
 import fire
+from PyQt6.QtWidgets import QApplication
 
-from src.readers.pnm import PnmReader
+from src.ui.pnm import Window
 
 
-def read_pnm(
-    image_path: str = './docs/shrek.pnm',
-):
-    with PnmReader(image_path) as reader:
-        picture_body = tuple(reader.read())
-
-    return picture_body
+def ui():
+    app = QApplication(sys.argv)
+    w = Window()
+    w.show()
+    sys.exit(app.exec())
 
 
 if __name__ == '__main__':
-    fire.Fire({'read': read_pnm})
+    fire.Fire({'ui': ui})
