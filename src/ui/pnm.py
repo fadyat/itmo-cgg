@@ -64,6 +64,7 @@ class EditFileWindow(QWidget):
         self.picture_format = QComboBox(self)
         self.picture_format.addItems(config.PNM_SUPPORTED_FORMATS)
         self.picture_format_label = QLabel('Format', self)
+        # self.picture_format.currentIndexChanged.connect(self.resize_table_action)
         format_layout.addWidget(self.picture_format_label)
         format_layout.addWidget(self.picture_format)
         self.layout().addLayout(format_layout)  # type: ignore
@@ -78,12 +79,15 @@ class EditFileWindow(QWidget):
     def setup_content(
         self,
     ):
-        self.picture_content = QTableWidget(self)
+        picture_content_layout = QHBoxLayout()
         self.picture_content_label = QLabel('Content', self)
+        picture_content_layout.addWidget(self.picture_content_label)
+        self.layout().addLayout(picture_content_layout)  # type: ignore
+
+        self.picture_content = QTableWidget(self)
         self.picture_content.setGeometry(0, 0, 500, 500)
         self.picture_content.verticalHeader().hide()
         self.picture_content.horizontalHeader().hide()
-        self.layout().addWidget(self.picture_content_label)
         self.layout().addWidget(self.picture_content)
 
     def edit_file(
@@ -97,7 +101,6 @@ class EditFileWindow(QWidget):
     ):
         self.picture_format.setCurrentText(pnm_format)
         self.picture_max_color.setText(str(max_color))
-        self.picture_content_label.setText(f'Content {width}, {height}, {bytes_per_pixel}')
         self.create_table(
             width=width,
             height=height,
@@ -110,8 +113,11 @@ class EditFileWindow(QWidget):
         width: int,
         height: int,
         bytes_per_pixel: int,
-        content: typing.Optional[typing.Tuple[int]] = None,
+        content: typing.Optional[typing.Sequence[int]] = None,
     ):
+        self.picture_content_label.setText(
+            f'Content {width}, {height}, {bytes_per_pixel}'
+        )
         self.picture_content.setColumnCount(width)
         self.picture_content.setRowCount(height)
         for i in range(
@@ -134,11 +140,6 @@ class EditFileWindow(QWidget):
         saved_file = QFileDialog.getSaveFileName(self, "Save File", "", "")[0]
         if not saved_file:
             return
-        model = self.picture_content.model()
-        content = []
-        for i in range(model.rowCount()):
-            for j in range(model.columnCount()):
-                content.extend([int(x) for x in model.index(i, j).data().split(',')])
 
         try:
             with PnmFile(saved_file, 'wb') as f:
@@ -146,7 +147,7 @@ class EditFileWindow(QWidget):
                     pnm_format=self.picture_format.currentText(),
                     width=int(self.picture_content.model().columnCount()),
                     height=int(self.picture_content.model().rowCount()),
-                    image_content=content,
+                    image_content=self.get_table_content(),
                     max_color_value=int(self.picture_max_color.text()),
                 )
         except (PnmError, UnicodeDecodeError, ValueError, TypeError) as e:
@@ -156,6 +157,41 @@ class EditFileWindow(QWidget):
             return
 
         self.close()
+
+    def get_table_content(self):
+        model = self.picture_content.model()
+        content = []
+        for i in range(model.rowCount()):
+            for j in range(model.columnCount()):
+                content.extend([int(x) for x in model.index(i, j).data().split(',')])
+
+        return content
+
+    # def resize_table_action(
+    #     self,
+    # ):
+    #     new_bytes_per_pixel = config.PNM_BYTES_PER_PIXEL[self.picture_format.currentText()]
+    #     previous_bytes_per_pixel = 3 if new_bytes_per_pixel == 1 else 1
+    #
+    #     self.resize_table(
+    #         width=int(self.picture_content.model().columnCount()) // previous_bytes_per_pixel,
+    #         height=int(self.picture_content.model().rowCount()),
+    #         bytes_per_pixel=new_bytes_per_pixel,
+    #     )
+
+    # def resize_table(
+    #     self,
+    #     width: int,
+    #     height: int,
+    #     bytes_per_pixel: int,
+    # ):
+    #     content = self.get_table_content()
+    #     self.create_table(
+    #         width=width,
+    #         height=height,
+    #         bytes_per_pixel=bytes_per_pixel,
+    #         content=content,
+    #     )
 
 
 class Window(QMainWindow):
@@ -244,7 +280,11 @@ class Window(QMainWindow):
             reader.width * reader.height * reader.bytes_per_pixel,
             reader.bytes_per_pixel,
         ):
-            painter.setPen(QColor(*content[i: i + reader.bytes_per_pixel]))
+            rgb = content[i: i + reader.bytes_per_pixel]
+            if reader.bytes_per_pixel == 1:
+                rgb *= 3
+
+            painter.setPen(QColor(*rgb))
             real_position = i // reader.bytes_per_pixel
             painter.drawPoint(
                 real_position % reader.width, real_position // reader.width
