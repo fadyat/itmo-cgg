@@ -15,8 +15,11 @@ from PyQt6.QtWidgets import (
     QLabel,
     QTableWidget,
     QTableWidgetItem,
+    QComboBox,
+    QHBoxLayout,
 )
 
+from src import config
 from src.errors.pnm import PnmError
 from src.files.pnm import PnmFile
 from src.typedef import logs
@@ -31,7 +34,7 @@ class Option(enum.Enum):
 
 
 class EditFileWindow(QWidget):
-    picture_format: QLineEdit
+    picture_format: QComboBox
     picture_format_label: QLabel
     resize_table_button: QPushButton
     picture_max_color: QLineEdit
@@ -57,22 +60,27 @@ class EditFileWindow(QWidget):
     def setup_header(
         self,
     ):
-        self.picture_format = QLineEdit(self)
+        format_layout = QHBoxLayout()
+        self.picture_format = QComboBox(self)
+        self.picture_format.addItems(config.PNM_SUPPORTED_FORMATS)
         self.picture_format_label = QLabel('Format', self)
-        self.layout().addWidget(self.picture_format_label)
-        self.layout().addWidget(self.picture_format)
+        format_layout.addWidget(self.picture_format_label)
+        format_layout.addWidget(self.picture_format)
+        self.layout().addLayout(format_layout)  # type: ignore
 
+        color_layout = QHBoxLayout()
         self.picture_max_color = QLineEdit(self)
         self.picture_max_color_label = QLabel('Max color', self)
-        self.layout().addWidget(self.picture_max_color_label)
-        self.layout().addWidget(self.picture_max_color)
+        color_layout.addWidget(self.picture_max_color_label)
+        color_layout.addWidget(self.picture_max_color)
+        self.layout().addLayout(color_layout)  # type: ignore
 
     def setup_content(
         self,
     ):
         self.picture_content = QTableWidget(self)
         self.picture_content_label = QLabel('Content', self)
-        self.picture_content.setFixedSize(500, 500)
+        self.picture_content.setGeometry(0, 0, 500, 500)
         self.picture_content.verticalHeader().hide()
         self.picture_content.horizontalHeader().hide()
         self.layout().addWidget(self.picture_content_label)
@@ -87,11 +95,9 @@ class EditFileWindow(QWidget):
         bytes_per_pixel: int,
         content: typing.Tuple[int],
     ):
-        self.picture_format.setText(pnm_format)
+        self.picture_format.setCurrentText(pnm_format)
         self.picture_max_color.setText(str(max_color))
-        self.picture_content_label.setText(
-            f'Content {width}, {height}, {bytes_per_pixel}'
-        )
+        self.picture_content_label.setText(f'Content {width}, {height}, {bytes_per_pixel}')
         self.create_table(
             width=width,
             height=height,
@@ -137,7 +143,7 @@ class EditFileWindow(QWidget):
         try:
             with PnmFile(saved_file, 'wb') as f:
                 f.write(
-                    pnm_format=self.picture_format.text(),
+                    pnm_format=self.picture_format.currentText(),
                     width=int(self.picture_content.model().columnCount()),
                     height=int(self.picture_content.model().rowCount()),
                     image_content=content,
