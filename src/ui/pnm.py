@@ -72,6 +72,7 @@ class EditFileWindow(QWidget):
     ):
         self.picture_content = QTableWidget(self)
         self.picture_content_label = QLabel('Content', self)
+        self.picture_content.setFixedSize(500, 500)
         self.picture_content.verticalHeader().hide()
         self.picture_content.horizontalHeader().hide()
         self.layout().addWidget(self.picture_content_label)
@@ -114,10 +115,10 @@ class EditFileWindow(QWidget):
         ):
             real_position = i // bytes_per_pixel
             self.picture_content.setItem(
-                column=real_position % width,
-                row=real_position // width,
-                item=QTableWidgetItem(
-                    ','.join(str(x) for x in content[i : i + bytes_per_pixel])
+                real_position // width,
+                real_position % width,
+                QTableWidgetItem(
+                    ','.join(str(x) for x in content[i: i + bytes_per_pixel])
                 ),
             )
 
@@ -237,7 +238,7 @@ class Window(QMainWindow):
             reader.width * reader.height * reader.bytes_per_pixel,
             reader.bytes_per_pixel,
         ):
-            painter.setPen(QColor(*content[i : i + reader.bytes_per_pixel]))
+            painter.setPen(QColor(*content[i: i + reader.bytes_per_pixel]))
             real_position = i // reader.bytes_per_pixel
             painter.drawPoint(
                 real_position % reader.width, real_position // reader.width
