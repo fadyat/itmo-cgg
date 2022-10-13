@@ -1,12 +1,13 @@
 import typing
 
-from src import config, typedef
-from src.decorators import debug_log
+from src import config
+from src.errors.pnm import PnmError
 from src.validators.pnm import (
     validate_max_color,
     validate_width_and_height,
     validate_pnm_format,
-    validate_file, validate_image_content,
+    validate_file,
+    validate_image_content,
 )
 
 
@@ -32,22 +33,44 @@ class PnmFile:
         self.__file = open(self.__image_path, self.mode)  # type: ignore
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(
+        self,
+        exc_type,
+        exc_val,
+        exc_tb,
+    ):
         self.__file.close()
         self.__file = None
 
     def read(
         self,
-    ) -> typing.Iterator[typedef.color_code]:
+    ) -> bytes:
         validate_file(self.__file)  # type: ignore
         self.__read_header()
-        yield from self.__read_body()
+        content = self.__file.read(self.width * self.height * self.bytes_per_pixel)
 
-    @debug_log()
-    def read_all(
+        if self.__file.read(1):
+            raise PnmError("Wrong file size in header")
+
+        return content  # type: ignore
+
+    def read_for_ui(
         self,
-    ) -> typing.Tuple[typedef.color_code]:
-        return tuple(self.read())
+    ) -> typing.Tuple[int]:
+        validate_file(self.__file)  # type: ignore
+        self.__read_header()
+
+        content = tuple(
+            ord(self.__file.read(1))
+            for _ in range(self.width)
+            for _ in range(self.height)
+            for _ in range(self.bytes_per_pixel)
+        )
+
+        if self.__file.read(1):
+            raise PnmError("Wrong file size in header")
+
+        return content  # type: ignore
 
     def __read_header(
         self,
@@ -57,16 +80,6 @@ class PnmFile:
         self.bytes_per_pixel = config.PNM_BYTES_PER_PIXEL[self.pnm_format]
         self.width, self.height = self.__get_file_size()
         self.max_color_value = self.__get_max_color_value()
-
-    def __read_body(
-        self,
-    ) -> typing.Iterator[typedef.color_code]:
-        return (
-            ord(self.__file.read(1))
-            for _ in range(self.width)
-            for _ in range(self.height)
-            for _ in range(self.bytes_per_pixel)
-        )
 
     def __read_line(
         self,
@@ -87,7 +100,7 @@ class PnmFile:
 
     def __get_max_color_value(
         self,
-    ) -> typedef.color_code:
+    ) -> int:
         max_color_value = self.__read_line()
         return validate_max_color(max_color_value)
 
@@ -96,14 +109,14 @@ class PnmFile:
         pnm_format: str,
         height: int,
         width: int,
-        image_content: typing.Sequence[typedef.color_code],
-        max_color_value: typedef.color_code = 255,
+        image_content: typing.Sequence[int],
+        max_color_value: int = 255,
     ):
         validate_file(self.__file)  # type: ignore
         validate_image_content(
-            image_content,
-            width,
-            height,
+            image_content=image_content,
+            width=width,
+            height=height,
             bytes_per_pixel=config.PNM_BYTES_PER_PIXEL[pnm_format],
         )
 
@@ -122,7 +135,7 @@ class PnmFile:
         pnm_format: str,
         height: int,
         width: int,
-        max_color_value: typedef.color_code,
+        max_color_value: int,
     ):
         self.__write_pnm_format(pnm_format)
         self.__write_file_size(width, height)
@@ -130,14 +143,14 @@ class PnmFile:
 
     def __write_body(
         self,
-        image_content: typing.Sequence[typedef.color_code],
+        image_content: typing.Sequence[int],
     ):
         for color_code in image_content:
             self.__file.write(color_code.to_bytes(1, 'big'))  # type: ignore
 
     def __write_line(
         self,
-        line: str | int,
+        line: typing.Union[str, int],
     ):
         self.__file.write(f"{line}\n".encode('utf-8'))  # type: ignore
 

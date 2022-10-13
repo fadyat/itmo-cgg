@@ -8,5 +8,5 @@ services:
     container_name: asana-scripts-app-likes
     volumes:
       - .:/opt/app
-    command: [ 'python', '/opt/app/cli.py', 'read', '--image-path=./docs/shrek.pnm' ]
+    command: [ 'python', '/opt/app/cli.py', 'ui' ]
     working_dir: '/opt/app'
