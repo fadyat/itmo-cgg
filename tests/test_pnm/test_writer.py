@@ -1,7 +1,7 @@
 import pytest
 
 from src.errors.pnm import PnmError, PnmSizeError, PnmFormatError, PnmColorError
-from src.files.pnm import PnmFile
+from src.files.pnm import PnmIO
 
 
 @pytest.mark.parametrize(
@@ -19,7 +19,7 @@ def test_incorrect_file_open(
     content,
     file,
 ):
-    pnm_file = PnmFile(file.name)
+    pnm_file = PnmIO(file.name)
 
     with pytest.raises(PnmError):
         pnm_file.write(
@@ -56,9 +56,9 @@ def test_invalid_image_content_size(
     content,
     file,
 ):
-    with PnmFile(file.name, 'wb') as pnm_file:
+    with PnmIO(file.name, 'wb') as w:
         with pytest.raises(PnmSizeError):
-            pnm_file.write(
+            w.write(
                 pnm_format=pnm_format,
                 width=width,
                 height=height,
@@ -92,9 +92,9 @@ def test_invalid_image_format(
     content,
     file,
 ):
-    with PnmFile(file.name, 'wb') as pnm_file:
+    with PnmIO(file.name, 'wb') as w:
         with pytest.raises(PnmFormatError):
-            pnm_file.write(
+            w.write(
                 pnm_format=pnm_format,
                 width=width,
                 height=height,
@@ -128,9 +128,9 @@ def test_invalid_image_max_color_value(
     content,
     file,
 ):
-    with PnmFile(file.name, 'wb') as pnm_file:
+    with PnmIO(file.name, 'wb') as w:
         with pytest.raises(PnmColorError):
-            pnm_file.write(
+            w.write(
                 pnm_format=pnm_format,
                 width=width,
                 height=height,
@@ -140,9 +140,9 @@ def test_invalid_image_max_color_value(
 
 
 def test_invalid_content_value(file):
-    with PnmFile(file.name, 'wb') as pnm_file:
+    with PnmIO(file.name, 'wb') as w:
         with pytest.raises(PnmColorError):
-            pnm_file.write(
+            w.write(
                 pnm_format='P6',
                 width=1,
                 height=1,
@@ -152,9 +152,9 @@ def test_invalid_content_value(file):
 
 
 def test_invalid_image_width(file):
-    with PnmFile(file.name, 'wb') as pnm_file:
+    with PnmIO(file.name, 'wb') as w:
         with pytest.raises(PnmSizeError):
-            pnm_file.write(
+            w.write(
                 pnm_format='P6',
                 width=-1,
                 height=1,
@@ -164,9 +164,9 @@ def test_invalid_image_width(file):
 
 
 def test_invalid_image_height(file):
-    with PnmFile(file.name, 'wb') as pnm_file:
+    with PnmIO(file.name, 'wb') as w:
         with pytest.raises(PnmSizeError):
-            pnm_file.write(
+            w.write(
                 pnm_format='P6',
                 width=1,
                 height=-1,
@@ -211,8 +211,8 @@ def test_write_file(
     expected,
     file,
 ):
-    with PnmFile(file.name, 'wb') as pnm_file:
-        pnm_file.write(
+    with PnmIO(file.name, 'wb') as w:
+        w.write(
             pnm_format=pnm_format,
             width=width,
             height=height,
@@ -220,8 +220,8 @@ def test_write_file(
             image_content=content,
         )
 
-    with PnmFile(file.name, 'rb') as pnm_file:
-        content = pnm_file.read()
+    with PnmIO(file.name, 'rb') as r:
+        pnm_file = r.read()
 
     assert pnm_file.pnm_format == pnm_format
     assert pnm_file.width == width
@@ -229,4 +229,4 @@ def test_write_file(
     assert pnm_file.max_color_value == max_color_value
     assert pnm_file.bytes_per_pixel == len(content) // (width * height)
     assert pnm_file.bytes_per_pixel == pnm_file.bytes_per_pixel
-    assert content == expected
+    assert pnm_file.content == expected
