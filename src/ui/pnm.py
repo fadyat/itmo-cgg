@@ -243,7 +243,7 @@ class Window(QMainWindow):
             pnm_format=pnm_file.pnm_format,
             width=pnm_file.width,
             height=pnm_file.height,
-            max_color=pnm_file.max_color_value,
+            max_color=pnm_file.max_color,
             bytes_per_pixel=pnm_file.bytes_per_pixel,
             content=pnm_file.content,
         )
