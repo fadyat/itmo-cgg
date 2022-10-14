@@ -74,7 +74,7 @@ class PnmIO:
             pnm_format=self.__pnm_file.pnm_format,
             width=self.__pnm_file.width,
             height=self.__pnm_file.height,
-            max_color_value=self.__pnm_file.max_color_value,
+            max_color=self.__pnm_file.max_color,
             bytes_per_pixel=self.__pnm_file.bytes_per_pixel,
             content=self.__pnm_file.content,
         )
@@ -88,7 +88,7 @@ class PnmIO:
             self.__pnm_file.pnm_format
         ]
         self.__pnm_file.width, self.__pnm_file.height = self.__get_file_size()
-        self.__pnm_file.max_color_value = self.__get_max_color_value()
+        self.__pnm_file.max_color = self.__get_max_color_value()
 
     def __read_line(
         self,

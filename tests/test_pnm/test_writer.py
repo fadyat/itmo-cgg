@@ -226,7 +226,7 @@ def test_write_file(
     assert pnm_file.pnm_format == pnm_format
     assert pnm_file.width == width
     assert pnm_file.height == height
-    assert pnm_file.max_color_value == max_color_value
+    assert pnm_file.max_color == max_color_value
     assert pnm_file.bytes_per_pixel == len(content) // (width * height)
     assert pnm_file.bytes_per_pixel == pnm_file.bytes_per_pixel
     assert pnm_file.content == expected
