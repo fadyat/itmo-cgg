@@ -8,6 +8,7 @@ from src.validators.pnm import (
     validate_pnm_format,
     validate_file,
     validate_image_content,
+    validate_color_value,
 )
 
 
@@ -146,6 +147,7 @@ class PnmFile:
         image_content: typing.Sequence[int],
     ):
         for color_code in image_content:
+            validate_color_value(color_code)
             self.__file.write(color_code.to_bytes(1, 'big'))  # type: ignore
 
     def __write_line(
