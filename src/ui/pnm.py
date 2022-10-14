@@ -138,7 +138,9 @@ class EditFileWindow(QWidget):
             return
 
         bytes_per_pixel = config.PNM_BYTES_PER_PIXEL[self.picture_format.currentText()]
-        actual_width = int(self.picture_content.model().columnCount()) // bytes_per_pixel
+        actual_width = (
+            int(self.picture_content.model().columnCount()) // bytes_per_pixel
+        )
         try:
             with PnmFile(saved_file, 'wb') as f:
                 f.write(
@@ -262,7 +264,7 @@ class Window(QMainWindow):
             reader.width * reader.height * reader.bytes_per_pixel,
             reader.bytes_per_pixel,
         ):
-            rgb = content[i: i + reader.bytes_per_pixel]
+            rgb = content[i : i + reader.bytes_per_pixel]
             if reader.bytes_per_pixel == 1:
                 rgb *= 3
 

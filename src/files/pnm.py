@@ -1,7 +1,7 @@
 import typing
 
 from src import config
-from src.errors.pnm import PnmError
+from src.errors.pnm import PnmError, PnmSizeError
 from src.validators.pnm import (
     validate_max_color,
     validate_width_and_height,
@@ -30,8 +30,11 @@ class PnmFile:
     def __enter__(
         self,
     ) -> 'PnmFile':
-        # mypy complains, when not passed a mode directly to open
-        self.__file = open(self.__image_path, self.mode)  # type: ignore
+        try:
+            self.__file = open(self.__image_path, self.mode)
+        except FileNotFoundError:
+            raise PnmError("File not found")
+
         return self
 
     def __exit__(
@@ -51,7 +54,7 @@ class PnmFile:
         content = self.__file.read(self.width * self.height * self.bytes_per_pixel)
 
         if self.__file.read(1):
-            raise PnmError("Wrong file size in header")
+            raise PnmSizeError("Wrong file size in header")
 
         return content  # type: ignore
 
@@ -69,7 +72,7 @@ class PnmFile:
         )
 
         if self.__file.read(1):
-            raise PnmError("Wrong file size in header")
+            raise PnmSizeError("Wrong file size in header")
 
         return content  # type: ignore
 
@@ -113,12 +116,16 @@ class PnmFile:
         image_content: typing.Sequence[int],
         max_color_value: int = 255,
     ):
-        validate_file(self.__file)  # type: ignore
+        try:
+            validate_file(self.__file)  # type: ignore
+        except AttributeError:
+            raise PnmError("File is not opened")
+
         validate_image_content(
             image_content=image_content,
             width=width,
             height=height,
-            bytes_per_pixel=config.PNM_BYTES_PER_PIXEL[pnm_format],
+            pnm_format=pnm_format,
         )
 
         self.__write_header(
@@ -129,6 +136,7 @@ class PnmFile:
         )
         self.__write_body(
             image_content=image_content,
+            max_color_value=max_color_value,
         )
 
     def __write_header(
@@ -145,9 +153,10 @@ class PnmFile:
     def __write_body(
         self,
         image_content: typing.Sequence[int],
+        max_color_value: int,
     ):
         for color_code in image_content:
-            validate_color_value(color_code)
+            validate_color_value(color_code, max_color_value)
             self.__file.write(color_code.to_bytes(1, 'big'))  # type: ignore
 
     def __write_line(
