@@ -29,8 +29,10 @@ class PnmFile:
     def __enter__(
         self,
     ) -> 'PnmFile':
-        # mypy complains, when not passed a mode directly to open
-        self.__file = open(self.__image_path, self.mode)  # type: ignore
+        try:
+            self.__file = open(self.__image_path, self.mode)
+        except FileNotFoundError:
+            raise PnmError("File not found")
         return self
 
     def __exit__(
@@ -45,19 +47,25 @@ class PnmFile:
     def read(
         self,
     ) -> bytes:
-        validate_file(self.__file)  # type: ignore
+        try:
+            validate_file(self.__file)
+        except AttributeError:
+            raise PnmError("File is not opened")
         self.__read_header()
         content = self.__file.read(self.width * self.height * self.bytes_per_pixel)
 
         if self.__file.read(1):
             raise PnmError("Wrong file size in header")
 
-        return content  # type: ignore
+        return content  
 
     def read_for_ui(
         self,
     ) -> typing.Tuple[int]:
-        validate_file(self.__file)  # type: ignore
+        try:
+            validate_file(self.__file)
+        except AttributeError:
+            raise PnmError("File is not opened")
         self.__read_header()
 
         content = tuple(
@@ -70,7 +78,7 @@ class PnmFile:
         if self.__file.read(1):
             raise PnmError("Wrong file size in header")
 
-        return content  # type: ignore
+        return content
 
     def __read_header(
         self,
@@ -84,7 +92,7 @@ class PnmFile:
     def __read_line(
         self,
     ) -> str:
-        return self.__file.readline().decode('utf-8').strip()  # type: ignore
+        return self.__file.readline().decode('utf-8').strip()  
 
     def __get_pnm_format(
         self,
@@ -112,7 +120,7 @@ class PnmFile:
         image_content: typing.Sequence[int],
         max_color_value: int = 255,
     ):
-        validate_file(self.__file)  # type: ignore
+        validate_file(self.__file)
         validate_image_content(
             image_content=image_content,
             width=width,
@@ -146,13 +154,13 @@ class PnmFile:
         image_content: typing.Sequence[int],
     ):
         for color_code in image_content:
-            self.__file.write(color_code.to_bytes(1, 'big'))  # type: ignore
+            self.__file.write(color_code.to_bytes(1, 'big'))
 
     def __write_line(
         self,
         line: typing.Union[str, int],
     ):
-        self.__file.write(f"{line}\n".encode('utf-8'))  # type: ignore
+        self.__file.write(f"{line}\n".encode('utf-8'))  
 
     def __write_pnm_format(
         self,

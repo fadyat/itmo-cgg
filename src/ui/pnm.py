@@ -2,10 +2,10 @@ import enum
 import os
 import typing
 
-from PyQt6 import QtGui
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QPainter, QColor
-from PyQt6.QtWidgets import (
+from PyQt5 import QtGui
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPainter, QColor
+from PyQt5.QtWidgets import (
     QMainWindow,
     QPushButton,
     QFileDialog,
