@@ -21,7 +21,7 @@ from PyQt6.QtWidgets import (
 
 from src import config
 from src.errors.pnm import PnmError
-from src.files.pnm import PnmFile
+from src.files.pnm import PnmIO
 from src.typedef import logs
 from src.ui.errors import PnmFileErrorMessage
 
@@ -97,7 +97,7 @@ class EditFileWindow(QWidget):
         height: int,
         max_color: int,
         bytes_per_pixel: int,
-        content: typing.Tuple[int],
+        content: typing.Sequence[int],
     ):
         self.picture_format.setCurrentText(pnm_format)
         self.picture_max_color.setText(str(max_color))
@@ -142,7 +142,7 @@ class EditFileWindow(QWidget):
             int(self.picture_content.model().columnCount()) // bytes_per_pixel
         )
         try:
-            with PnmFile(saved_file, 'wb') as f:
+            with PnmIO(saved_file, 'wb') as f:
                 f.write(
                     pnm_format=self.picture_format.currentText(),
                     width=actual_width,
@@ -232,20 +232,20 @@ class Window(QMainWindow):
 
         self.option = Option.EDITING
         try:
-            with PnmFile(self.selected_file, mode='rb') as reader:
-                content = reader.read_for_ui()
+            with PnmIO(self.selected_file, mode='rb') as r:
+                pnm_file = r.read_for_ui()
         except (PnmError, UnicodeDecodeError, ValueError, TypeError) as e:
             PnmFileErrorMessage(str(e), self, logs).show()
             return
 
         self.edit_file_window.show()
         self.edit_file_window.edit_file(
-            pnm_format=reader.pnm_format,
-            width=reader.width,
-            height=reader.height,
-            max_color=reader.max_color_value,
-            bytes_per_pixel=reader.bytes_per_pixel,
-            content=content,
+            pnm_format=pnm_file.pnm_format,
+            width=pnm_file.width,
+            height=pnm_file.height,
+            max_color=pnm_file.max_color_value,
+            bytes_per_pixel=pnm_file.bytes_per_pixel,
+            content=pnm_file.content,
         )
 
     def real_render_image(
@@ -253,25 +253,25 @@ class Window(QMainWindow):
     ):
         painter = QPainter(self)
         try:
-            with PnmFile(self.selected_file, mode='rb') as reader:
-                content = reader.read()
+            with PnmIO(self.selected_file, mode='rb') as r:
+                pnm_file = r.read()
         except (PnmError, UnicodeDecodeError, ValueError, TypeError) as e:
             PnmFileErrorMessage(str(e), self, logs).show()
             return
 
         for i in range(
             0,
-            reader.width * reader.height * reader.bytes_per_pixel,
-            reader.bytes_per_pixel,
+            pnm_file.get_size(),
+            pnm_file.bytes_per_pixel,
         ):
-            rgb = content[i : i + reader.bytes_per_pixel]
-            if reader.bytes_per_pixel == 1:
+            rgb = pnm_file.content[i: i + pnm_file.bytes_per_pixel]
+            if pnm_file.bytes_per_pixel == 1:
                 rgb *= 3
 
             painter.setPen(QColor(*rgb))
-            real_position = i // reader.bytes_per_pixel
+            real_position = i // pnm_file.bytes_per_pixel
             painter.drawPoint(
-                real_position % reader.width, real_position // reader.width
+                real_position % pnm_file.width, real_position // pnm_file.width
             )
         painter.end()
 
