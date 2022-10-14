@@ -34,7 +34,17 @@ def test_incorrect_file_open(
 @pytest.mark.parametrize(
     'pnm_format, width, height, max_color_value, content',
     [
-        ('P5', 1, 1, 1, (0, 0, 0,)),
+        (
+            'P5',
+            1,
+            1,
+            1,
+            (
+                0,
+                0,
+                0,
+            ),
+        ),
         ('P6', 1, 1, 1, (0, 0, 0, 0, 0, 0)),
     ],
 )
@@ -61,7 +71,17 @@ def test_invalid_image_content_size(
     'pnm_format, width, height, max_color_value, content',
     [
         ('P2', 1, 1, 1, (0,)),
-        ('QQ', 1, 1, 1, (0, 0, 0,)),
+        (
+            'QQ',
+            1,
+            1,
+            1,
+            (
+                0,
+                0,
+                0,
+            ),
+        ),
     ],
 )
 def test_invalid_image_format(
@@ -87,7 +107,17 @@ def test_invalid_image_format(
     'pnm_format, width, height, max_color_value, content',
     [
         ('P5', 1, 1, 256, (0,)),
-        ('P6', 1, 1, -1, (0, 0, 0,)),
+        (
+            'P6',
+            1,
+            1,
+            -1,
+            (
+                0,
+                0,
+                0,
+            ),
+        ),
     ],
 )
 def test_invalid_image_max_color_value(

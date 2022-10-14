@@ -26,4 +26,3 @@ class PnmSizeError(PnmError):
 
 class PnmFormatError(PnmError):
     ...
-

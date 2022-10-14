@@ -7,5 +7,3 @@ import pytest
 def file():
     with tempfile.NamedTemporaryFile() as file:
         yield file
-
-
