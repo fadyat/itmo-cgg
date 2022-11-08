@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class SupportedFormats(Enum):
+class ColorFormat(Enum):
     RGB = 0
     HSL = 1
     HSV = 2
@@ -205,13 +205,13 @@ class CmyConverter:
 class ColorConverter:
     def __init__(
         self,
-        convert_to: SupportedFormats,
+        convert_to: ColorFormat,
     ):
         self.convert_to = convert_to
 
     def convert(
         self,
-        convert_from: SupportedFormats,
+        convert_from: ColorFormat,
         content: list[float],
     ):
         if self.convert_to == convert_from:
@@ -223,47 +223,47 @@ class ColorConverter:
     @classmethod
     def _convert_to_rgb(
         cls,
-        convert_from: SupportedFormats,
+        convert_from: ColorFormat,
         content: list[float],
     ):
-        if convert_from == SupportedFormats.RGB:
+        if convert_from == ColorFormat.RGB:
             return content
 
-        if convert_from == SupportedFormats.HSL:
+        if convert_from == ColorFormat.HSL:
             return HslConverter.hsl_to_rgb(content)
 
-        if convert_from == SupportedFormats.HSV:
+        if convert_from == ColorFormat.HSV:
             return HsvConverter.hsv_to_rgb(content)
 
-        if convert_from == SupportedFormats.YCbCr601:
+        if convert_from == ColorFormat.YCbCr601:
             return YCbCr601Converter.ycbcr601_to_rgb(content)
 
-        if convert_from == SupportedFormats.YCbCr709:
+        if convert_from == ColorFormat.YCbCr709:
             return YCbCr709Converter.ycbcr709_to_rgb(content)
 
-        if convert_from == SupportedFormats.CMY:
+        if convert_from == ColorFormat.CMY:
             return CmyConverter.cmy_to_rgb(content)
 
     @classmethod
     def _convert_from_rgb(
         cls,
-        convert_to: SupportedFormats,
+        convert_to: ColorFormat,
         content: list[float],
     ):
-        if convert_to == SupportedFormats.RGB:
+        if convert_to == ColorFormat.RGB:
             return content
 
-        if convert_to == SupportedFormats.HSL:
+        if convert_to == ColorFormat.HSL:
             return HslConverter.rgb_to_hsl(content)
 
-        if convert_to == SupportedFormats.HSV:
+        if convert_to == ColorFormat.HSV:
             return HsvConverter.rgb_to_hsv(content)
 
-        if convert_to == SupportedFormats.YCbCr601:
+        if convert_to == ColorFormat.YCbCr601:
             return YCbCr601Converter.rgb_to_ycbcr601(content)
 
-        if convert_to == SupportedFormats.YCbCr709:
+        if convert_to == ColorFormat.YCbCr709:
             return YCbCr709Converter.rgb_to_ycbcr709(content)
 
-        if convert_to == SupportedFormats.CMY:
+        if convert_to == ColorFormat.CMY:
             return CmyConverter.rgb_to_cmy(content)
