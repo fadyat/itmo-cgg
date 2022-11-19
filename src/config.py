@@ -1,2 +1,3 @@
 PNM_BYTES_PER_PIXEL = {'P5': 1, 'P6': 3}
 PNM_SUPPORTED_FORMATS = tuple(PNM_BYTES_PER_PIXEL.keys())
+COLOR_MODELS = {'RGB': 1, 'HSL': 2, 'HSV': 3, 'YCbCr601': 4, 'YCbCr709': 5, 'YCoCg': 6, 'CMY': 7}

@@ -42,7 +42,7 @@ class PnmFileUI:
     height: int
     max_color: int
     bytes_per_pixel: int
-    content: typing.Sequence[int]
+    content: typing.List[int]
 
     def get_size(self):
         return self.width * self.height * self.bytes_per_pixel
