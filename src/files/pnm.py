@@ -64,7 +64,7 @@ class PnmIO:
         self.__read_header()
 
         self.__pnm_file.content = [
-            self.convert_rgb_int_to_float(ord(self.__file.read(1))) for _ in range(self.__pnm_file.get_size())
+            ord(self.__file.read(1)) for _ in range(self.__pnm_file.get_size())
         ]
 
         if self.__file.read(1):
@@ -78,12 +78,6 @@ class PnmIO:
             bytes_per_pixel=self.__pnm_file.bytes_per_pixel,
             content=self.__pnm_file.content,
         )
-
-    @staticmethod
-    def convert_rgb_int_to_float(
-            rgb_int,
-    ):
-        return rgb_int / 255
 
     def __read_header(
         self,
@@ -124,7 +118,7 @@ class PnmIO:
         pnm_format: str,
         height: int,
         width: int,
-        image_content: typing.List[float],
+        image_content: typing.List[int],
         max_color_value: int = 255,
     ):
         try:
@@ -167,11 +161,9 @@ class PnmIO:
         max_color_value: int,
     ):
         for color_code in image_content:
-            validate_color_value(color_code, max_color_value)
-            float_color_value = int(color_code * 255)
-            float_color_value = 0 if float_color_value < 0 else float_color_value
-            float_color_value = 255 if float_color_value > 255 else float_color_value
-            self.__file.write(float_color_value.to_bytes(1, 'big'))  # type: ignore
+            # validate_color_value(color_code, max_color_value) # deprecated
+            color_code = 0 if color_code < 0 else color_code and 255 if color_code > 255 else color_code
+            self.__file.write(color_code.to_bytes(1, 'big'))  # type: ignore
 
     def __write_line(
         self,
