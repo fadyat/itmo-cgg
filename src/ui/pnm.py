@@ -254,7 +254,6 @@ class Window(QMainWindow):
     ):
         color_model = ColorFormat[self.color_model.currentText()]
         if type(self.selected_file) is not str:
-            # PnmFileErrorMessage("No file selected", self, logs).show()
             self.color_model.setCurrentIndex(self.current_color_model.value)
             return
 
