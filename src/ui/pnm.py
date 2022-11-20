@@ -45,7 +45,7 @@ class EditFileWindow(QWidget):
     picture_content_label: QLabel
 
     def __init__(
-            self,
+        self,
     ):
         super().__init__()
         self.setWindowTitle('Edit PNM file')
@@ -60,7 +60,7 @@ class EditFileWindow(QWidget):
         self.layout().addWidget(self.save_button)
 
     def setup_header(
-            self,
+        self,
     ):
         format_layout = QHBoxLayout()
         self.picture_format = QComboBox(self)
@@ -79,7 +79,7 @@ class EditFileWindow(QWidget):
         self.layout().addLayout(color_layout)  # type: ignore
 
     def setup_content(
-            self,
+        self,
     ):
         picture_content_layout = QHBoxLayout()
         self.picture_content_label = QLabel('Content', self)
@@ -93,13 +93,13 @@ class EditFileWindow(QWidget):
         self.layout().addWidget(self.picture_content)
 
     def edit_file(
-            self,
-            pnm_format: str,
-            width: int,
-            height: int,
-            max_color: int,
-            bytes_per_pixel: int,
-            content: typing.List[int],
+        self,
+        pnm_format: str,
+        width: int,
+        height: int,
+        max_color: int,
+        bytes_per_pixel: int,
+        content: typing.List[int],
     ):
         self.picture_format.setCurrentText(pnm_format)
         self.picture_max_color.setText(str(max_color))
@@ -111,11 +111,11 @@ class EditFileWindow(QWidget):
         )
 
     def create_table(
-            self,
-            width: int,
-            height: int,
-            bytes_per_pixel: int,
-            content: typing.Optional[typing.List[int]] = None,
+        self,
+        width: int,
+        height: int,
+        bytes_per_pixel: int,
+        content: typing.Optional[typing.List[int]] = None,
     ):
         self.picture_content_label.setText(
             f'Content {width}, {height}, {bytes_per_pixel}'
@@ -123,8 +123,8 @@ class EditFileWindow(QWidget):
         self.picture_content.setColumnCount(bytes_per_pixel * width)
         self.picture_content.setRowCount(height)
         for i in range(
-                0,
-                width * height * bytes_per_pixel,
+            0,
+            width * height * bytes_per_pixel,
         ):
             self.picture_content.setItem(
                 i // (width * bytes_per_pixel),
@@ -133,7 +133,7 @@ class EditFileWindow(QWidget):
             )
 
     def save_changes(
-            self,
+        self,
     ):
         saved_file = QFileDialog.getSaveFileName(self, "Save File", "", "")[0]
         if not saved_file:
@@ -141,7 +141,7 @@ class EditFileWindow(QWidget):
 
         bytes_per_pixel = config.PNM_BYTES_PER_PIXEL[self.picture_format.currentText()]
         actual_width = (
-                int(self.picture_content.model().columnCount()) // bytes_per_pixel
+            int(self.picture_content.model().columnCount()) // bytes_per_pixel
         )
         try:
             with PnmIO(saved_file, 'wb') as f:
@@ -203,7 +203,7 @@ class Window(QMainWindow):
     current_color_model: ColorFormat = ColorFormat.RGB
 
     def __init__(
-            self,
+        self,
     ):
         super().__init__()
         self.setWindowTitle("Best redactor ever")
@@ -234,7 +234,7 @@ class Window(QMainWindow):
         self.edit_file_window = EditFileWindow()
 
     def change_color_model(
-            self,
+        self,
     ):
         color_model = ColorFormat[self.color_model.currentText()]
         if self.selected_file is Ellipsis:
@@ -244,12 +244,14 @@ class Window(QMainWindow):
             with PnmIO(self.selected_file, mode='rb') as r:
                 pnm_file = r.read_for_ui()
                 converter = ColorConverter(color_model)
-                pnm_file.content = converter.convert(self.current_color_model, pnm_file.content, pnm_file.bytes_per_pixel)
+                pnm_file.content = converter.convert(
+                    self.current_color_model, pnm_file.content, pnm_file.bytes_per_pixel
+                )
         except (PnmError, UnicodeDecodeError, ValueError, TypeError) as e:
             PnmFileErrorMessage(str(e), self, logs).show()
             return
         try:
-            with PnmIO(self.selected_file, 'wb') as f:
+            with PnmIO(self.selected_file + '_converted', 'wb') as f:
                 f.write(
                     pnm_format=pnm_file.pnm_format,
                     width=pnm_file.width,
@@ -259,13 +261,11 @@ class Window(QMainWindow):
                 )
         except (PnmError, UnicodeDecodeError, ValueError, TypeError) as e:
             PnmFileErrorMessage(str(e), self, logs).show()
-            if not os.path.getsize(self.selected_file):
-                os.remove(self.selected_file)
             return
         self.current_color_model = color_model
 
     def render_image(
-            self,
+        self,
     ):
         self.selected_file = QFileDialog.getOpenFileName(self, "Open File", "", "")[0]
         if not self.selected_file:
@@ -275,13 +275,13 @@ class Window(QMainWindow):
         self.update()
 
     def clear_picture(
-            self,
+        self,
     ):
         self.option = Option.NOTHING
         self.update()
 
     def edit_file_content(
-            self,
+        self,
     ):
         logs.info('Edit file')
         self.selected_file = QFileDialog.getOpenFileName(self, "Open File", "", "")[0]
@@ -307,7 +307,7 @@ class Window(QMainWindow):
         )
 
     def real_render_image(
-            self,
+        self,
     ):
         painter = QPainter(self)
         try:
@@ -318,9 +318,9 @@ class Window(QMainWindow):
             return
 
         for i in range(
-                0,
-                pnm_file.get_size(),
-                pnm_file.bytes_per_pixel,
+            0,
+            pnm_file.get_size(),
+            pnm_file.bytes_per_pixel,
         ):
             rgb = pnm_file.content[i: i + pnm_file.bytes_per_pixel]
             if pnm_file.bytes_per_pixel == 1:
@@ -334,8 +334,8 @@ class Window(QMainWindow):
         painter.end()
 
     def paintEvent(
-            self,
-            e: QtGui.QPaintEvent,
+        self,
+        e: QtGui.QPaintEvent,
     ):
         if self.option == Option.RENDER:
             logs.info('Render image')
