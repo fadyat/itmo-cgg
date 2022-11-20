@@ -64,7 +64,7 @@ def validate_file(
 
 
 def validate_image_content(
-    image_content: typing.Sequence[int],
+    image_content: typing.List[int],
     width: int,
     height: int,
     pnm_format: str,

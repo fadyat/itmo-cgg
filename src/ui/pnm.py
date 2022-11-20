@@ -2,10 +2,10 @@ import enum
 import os
 import typing
 
-from PyQt5 import QtGui
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPainter, QColor
-from PyQt5.QtWidgets import (
+from PyQt6 import QtGui
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QPainter, QColor
+from PyQt6.QtWidgets import (
     QMainWindow,
     QPushButton,
     QFileDialog,
@@ -16,14 +16,15 @@ from PyQt5.QtWidgets import (
     QTableWidget,
     QTableWidgetItem,
     QComboBox,
-    QHBoxLayout,
-)
+    QHBoxLayout, QCheckBox, )
 
 from src import config
+from src.entities.pnm import PnmFile
 from src.errors.pnm import PnmError
 from src.files.pnm import PnmIO
 from src.typedef import logs
 from src.ui.errors import PnmFileErrorMessage
+from src.utils.converter import ColorConverter, ColorFormat
 
 
 class Option(enum.Enum):
@@ -44,6 +45,7 @@ class EditFileWindow(QWidget):
 
     def __init__(
         self,
+        channel_window: "ChannelWindow",
     ):
         super().__init__()
         self.setWindowTitle('Edit PNM file')
@@ -56,6 +58,7 @@ class EditFileWindow(QWidget):
         self.save_button = QPushButton('Save', self)
         self.save_button.clicked.connect(self.save_changes)
         self.layout().addWidget(self.save_button)
+        self.channel_window = channel_window
 
     def setup_header(
         self,
@@ -97,7 +100,7 @@ class EditFileWindow(QWidget):
         height: int,
         max_color: int,
         bytes_per_pixel: int,
-        content: typing.Sequence[int],
+        content: typing.List[int],
     ):
         self.picture_format.setCurrentText(pnm_format)
         self.picture_max_color.setText(str(max_color))
@@ -113,7 +116,7 @@ class EditFileWindow(QWidget):
         width: int,
         height: int,
         bytes_per_pixel: int,
-        content: typing.Optional[typing.Sequence[int]] = None,
+        content: typing.Optional[typing.List[int]] = None,
     ):
         self.picture_content_label.setText(
             f'Content {width}, {height}, {bytes_per_pixel}'
@@ -137,30 +140,59 @@ class EditFileWindow(QWidget):
         if not saved_file:
             return
 
-        bytes_per_pixel = config.PNM_BYTES_PER_PIXEL[self.picture_format.currentText()]
-        actual_width = (
-            int(self.picture_content.model().columnCount()) // bytes_per_pixel
-        )
         try:
+            self.try_to_downgrade_format()
             with PnmIO(saved_file, 'wb') as f:
                 f.write(
                     pnm_format=self.picture_format.currentText(),
-                    width=actual_width,
+                    width=(
+                        int(self.picture_content.model().columnCount()) //
+                        config.PNM_BYTES_PER_PIXEL[self.picture_format.currentText()]
+                    ),
                     height=int(self.picture_content.model().rowCount()),
                     image_content=self.get_table_content(),
                     max_color_value=int(self.picture_max_color.text()),
                 )
         except (PnmError, UnicodeDecodeError, ValueError, TypeError) as e:
             PnmFileErrorMessage(str(e), self, logs).show()
-            if not os.path.getsize(saved_file):
-                os.remove(saved_file)
+            # if not os.path.getsize(saved_file):
+            #     os.remove(saved_file)
             return
 
         self.close()
 
+    def try_to_downgrade_format(self):
+        if self.picture_format.currentText() != config.P6:
+            return
+
+        available_channels = self.channel_window.get_available_channels()
+        if sum(available_channels) == 1:
+            self.picture_format.setCurrentText(config.P5)
+            new_width = int(self.picture_content.model().columnCount()) // 3
+            new_height = int(self.picture_content.model().rowCount())
+            # get index in array where first channel is not 0
+            available_channel = 0
+            for i in range(0, len(available_channels)):
+                if available_channels[i]:
+                    available_channel = i
+                    break
+
+            new_content = [
+                item
+                for i, item in enumerate(self.get_table_content())
+                if i % 3 == available_channel
+            ]
+
+            self.create_table(
+                width=new_width,
+                height=new_height,
+                bytes_per_pixel=config.PNM_BYTES_PER_PIXEL[self.picture_format.currentText()],
+                content=new_content,
+            )
+
     def get_table_content(self):
         model = self.picture_content.model()
-        return tuple(
+        return list(
             int(model.index(i, j).data())
             for i in range(model.rowCount())
             for j in range(model.columnCount())
@@ -178,9 +210,47 @@ class EditFileWindow(QWidget):
         )
 
 
+class ChannelWindow(QWidget):
+    first_channel: QCheckBox
+    second_channel: QCheckBox
+    third_channel: QCheckBox
+
+    def __init__(self):
+        super().__init__()
+        self.setLayout(QVBoxLayout())
+        self.setup_channels()
+
+    def setup_channels(self):
+        self.first_channel = QCheckBox('Disable 1', self)
+        self.second_channel = QCheckBox('Disable 2', self)
+        self.third_channel = QCheckBox('Disable 3', self)
+
+        self.layout().addWidget(self.first_channel)
+        self.layout().addWidget(self.second_channel)
+        self.layout().addWidget(self.third_channel)
+
+    def get_available_channels(self):
+        return [
+            not self.first_channel.isChecked(),
+            not self.second_channel.isChecked(),
+            not self.third_channel.isChecked(),
+        ]
+
+    def is_first_disabled(self):
+        return self.first_channel.isChecked()
+
+    def is_second_disabled(self):
+        return self.second_channel.isChecked()
+
+    def is_third_disabled(self):
+        return self.third_channel.isChecked()
+
+
 class Window(QMainWindow):
     option = Option.NOTHING
     selected_file: str = ...
+    current_rendered_file: PnmFile = ...
+    current_color_model: ColorFormat = ColorFormat.RGB
 
     def __init__(
         self,
@@ -198,13 +268,58 @@ class Window(QMainWindow):
         self.edit_file_button = QPushButton("Edit image", self)
         self.edit_file_button.clicked.connect(self.edit_file_content)
 
+        self.color_model = QComboBox(self)
+        self.color_model.addItems(config.COLOR_MODELS)
+        self.color_model.currentIndexChanged.connect(self.change_color_model)
+
+        self.change_channel_button = QPushButton("Change channel", self)
+        self.change_channel_button.clicked.connect(self.change_channel)
+
         self.toolbar = self.addToolBar("Toolbar")
         self.toolbar.addWidget(self.render_button)
         self.toolbar.addWidget(self.edit_file_button)
         self.toolbar.addWidget(self.clear_picture_button)
+        self.toolbar.addWidget(self.color_model)
+        self.toolbar.addWidget(self.change_channel_button)
         self.toolbar.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
 
-        self.edit_file_window = EditFileWindow()
+        self.channel_window = ChannelWindow()
+        self.edit_file_window = EditFileWindow(self.channel_window)
+
+    def change_channel(self):
+        self.channel_window.show()
+
+    def change_color_model(
+        self,
+    ):
+        color_model = ColorFormat[self.color_model.currentText()]
+        if type(self.selected_file) is not str:
+            self.color_model.setCurrentIndex(self.current_color_model.value)
+            return
+
+        try:
+            with PnmIO(self.selected_file, mode='rb') as r:
+                pnm_file = r.read_for_ui()
+                converter = ColorConverter(color_model)
+                pnm_file.content = converter.convert(
+                    self.current_color_model, pnm_file.content, pnm_file.bytes_per_pixel
+                )
+        except (PnmError, UnicodeDecodeError, ValueError, TypeError) as e:
+            PnmFileErrorMessage(str(e), self, logs).show()
+            return
+        try:
+            with PnmIO(self.selected_file + '_kek', 'wb') as f:
+                f.write(
+                    pnm_format=pnm_file.pnm_format,
+                    width=pnm_file.width,
+                    height=pnm_file.height,
+                    image_content=pnm_file.content,
+                    max_color_value=pnm_file.max_color,
+                )
+        except (PnmError, UnicodeDecodeError, ValueError, TypeError) as e:
+            PnmFileErrorMessage(str(e), self, logs).show()
+            return
+        self.current_color_model = color_model
 
     def render_image(
         self,
@@ -268,6 +383,9 @@ class Window(QMainWindow):
             if pnm_file.bytes_per_pixel == 1:
                 rgb *= 3
 
+            if pnm_file.bytes_per_pixel != 1:
+                rgb = self.disable_color_channels(rgb)
+
             painter.setPen(QColor(*rgb))
             real_position = i // pnm_file.bytes_per_pixel
             painter.drawPoint(
@@ -286,3 +404,16 @@ class Window(QMainWindow):
         # setting option for nothing
         # because when resizing window it's reading file again
         self.option = Option.NOTHING
+
+    def disable_color_channels(
+        self,
+        color: typing.Sequence[float],
+    ):
+        available = self.channel_window.get_available_channels()
+
+        length = min(len(color), len(available))
+
+        return [
+            0 if not available[i] else color[i]
+            for i in range(length)
+        ]

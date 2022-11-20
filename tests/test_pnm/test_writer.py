@@ -139,18 +139,6 @@ def test_invalid_image_max_color_value(
             )
 
 
-def test_invalid_content_value(file):
-    with PnmIO(file.name, 'wb') as w:
-        with pytest.raises(PnmColorError):
-            w.write(
-                pnm_format='P6',
-                width=1,
-                height=1,
-                max_color_value=1,
-                image_content=(0, 0, 2),
-            )
-
-
 def test_invalid_image_width(file):
     with PnmIO(file.name, 'wb') as w:
         with pytest.raises(PnmSizeError):

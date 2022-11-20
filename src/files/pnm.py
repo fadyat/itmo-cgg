@@ -63,9 +63,9 @@ class PnmIO:
         validate_file(self.__file)  # type: ignore
         self.__read_header()
 
-        self.__pnm_file.content = tuple(
+        self.__pnm_file.content = [
             ord(self.__file.read(1)) for _ in range(self.__pnm_file.get_size())
-        )
+        ]
 
         if self.__file.read(1):
             raise PnmSizeError("Wrong file size in header")
@@ -118,7 +118,7 @@ class PnmIO:
         pnm_format: str,
         height: int,
         width: int,
-        image_content: typing.Sequence[int],
+        image_content: typing.List[int],
         max_color_value: int = 255,
     ):
         try:
@@ -157,11 +157,12 @@ class PnmIO:
 
     def __write_body(
         self,
-        image_content: typing.Sequence[int],
+        image_content: typing.List[int],
         max_color_value: int,
     ):
         for color_code in image_content:
-            validate_color_value(color_code, max_color_value)
+            # validate_color_value(color_code, max_color_value) # deprecated
+            color_code = 0 if color_code < 0 else color_code and 255 if color_code > 255 else color_code
             self.__file.write(color_code.to_bytes(1, 'big'))  # type: ignore
 
     def __write_line(
