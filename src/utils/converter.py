@@ -131,6 +131,9 @@ class YCbCrBased:
         cb = (b - y) / (2 * (1 - kb))
         cr = (r - y) / (2 * (1 - kr))
 
+        cb += 0.5
+        cr += 0.5
+
         return [round(255 * y), round(255 * cb), round(255 * cr)]
 
     @classmethod
@@ -142,8 +145,11 @@ class YCbCrBased:
     ):
         y, cb, cr = pixel[0] / 255, pixel[1] / 255, pixel[2] / 255
 
+        cb -= 0.5
+        cr -= 0.5
+
         r = y + 2 * (1 - kr) * cr
-        g = y - 2 * (1 - kb) * kb * cb - 2 * (1 - kr) * kr * cr
+        g = y - kb / (1 - kb - kr) * 2 * (1 - kb) * cb - kr / (1 - kb - kr) * 2 * (1 - kr) * cr
         b = y + 2 * (1 - kb) * cb
 
         return [round(r * 255), round(g * 255), round(b * 255)]
@@ -223,7 +229,6 @@ class YCbCr709Converter(YCbCrBased):
 
 
 class CmyConverter:
-    # all color spaces are in interval [0, 1]
 
     @classmethod
     def rgb_to_cmy(
@@ -341,4 +346,8 @@ class ColorConverter:
 
 
 if __name__ == '__main__':
-    print(YCoCgConverter.rgb_to_ycocg([255, 0, 0]))
+    c = [0, 255, 0]
+    a = YCbCr601Converter.rgb_to_ycbcr601(c)
+    b = YCbCr601Converter.ycbcr601_to_rgb(a)
+
+    print(c, a, b)
