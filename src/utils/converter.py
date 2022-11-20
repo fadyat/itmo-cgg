@@ -1,3 +1,4 @@
+import typing
 from enum import Enum
 
 
@@ -16,10 +17,10 @@ class HueBasedConverter:
     @classmethod
     def count_hue(
         cls,
-        pixel: list[float],
+        pixel: typing.Sequence[float],
     ):
-        r, g, b = pixel[0] / 255, pixel[1] / 255, pixel[2] / 255
-        c_min, c_max = min(r, g, b), max(r, g, b)
+        r, g, b = pixel[0], pixel[1], pixel[2]
+        c_min, c_max = min(pixel), max(pixel)
         delta = c_max - c_min
 
         if delta == 0:
@@ -31,7 +32,7 @@ class HueBasedConverter:
         else:
             h = 60 * (((r - g) / delta) + 4)
 
-        return h
+        return h / 360
 
     @classmethod
     def convert_to_rgb(
@@ -63,12 +64,12 @@ class HslConverter(HueBasedConverter):
         cls,
         pixel: list[float],
     ):
-        pixel[0], pixel[1], pixel[2] = pixel[0] / 255, pixel[1] / 255, pixel[2] / 255,
+        pixel = pixel[0] / 255, pixel[1] / 255, pixel[2] / 255
         c_min, c_max = min(pixel), max(pixel)
         delta = c_max - c_min
 
         h = cls.count_hue(pixel)
-        s = 0 if c_max - c_min == 0 else delta / (1 - abs(c_max + c_min - 1))
+        s = 0 if delta == 0 else delta / (1 - abs(c_max + c_min - 1))
         l = (c_max + c_min) / 2
 
         return [round(h * 255), round(s * 255), round(l * 255)]
@@ -93,7 +94,7 @@ class HsvConverter(HueBasedConverter):
         cls,
         pixel: list[float],
     ):
-        pixel[0], pixel[1], pixel[2] = pixel[0] / 255, pixel[1] / 255, pixel[2] / 255
+        pixel = pixel[0] / 255, pixel[1] / 255, pixel[2] / 255
         c_min, c_max = min(pixel), max(pixel)
         delta = c_max - c_min
 
@@ -109,6 +110,7 @@ class HsvConverter(HueBasedConverter):
         pixel: list[float],
     ):
         h, s, v = pixel[0] / 255, pixel[1] / 255, pixel[2] / 255
+        h *= 360
         c = v * s
         x = c * (1 - abs((h / 60) % 2 - 1))
         m = v - c
@@ -343,11 +345,3 @@ class ColorConverter:
             for i in range(0, len(content), bytes_per_pixel)
             for j in convertor_function(content[i:i + bytes_per_pixel])
         ]
-
-
-if __name__ == '__main__':
-    c = [0, 255, 0]
-    a = YCbCr601Converter.rgb_to_ycbcr601(c)
-    b = YCbCr601Converter.ycbcr601_to_rgb(a)
-
-    print(c, a, b)
