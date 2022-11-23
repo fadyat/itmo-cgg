@@ -55,7 +55,7 @@ class HueBasedConverter:
         else:
             r, g, b = c, 0, x
 
-        return [round((r + m) * 255), round((g + m) * 255), round((b + m) * 255)]
+        return [r + m, g + m, b + m]
 
 
 class HslConverter(HueBasedConverter):
@@ -64,7 +64,7 @@ class HslConverter(HueBasedConverter):
         cls,
         pixel: list[float],
     ):
-        pixel = pixel[0] / 255, pixel[1] / 255, pixel[2] / 255
+        pixel = pixel[0], pixel[1], pixel[2]
         c_min, c_max = min(pixel), max(pixel)
         delta = c_max - c_min
 
@@ -72,14 +72,14 @@ class HslConverter(HueBasedConverter):
         s = 0 if delta == 0 else delta / (1 - abs(c_max + c_min - 1))
         l = (c_max + c_min) / 2
 
-        return [round(h * 255), round(s * 255), round(l * 255)]
+        return [h, s, l]
 
     @classmethod
     def hsl_to_rgb(
         cls,
         pixel: list[float],
     ):
-        h, s, l = pixel[0] / 255, pixel[1] / 255, pixel[2] / 255
+        h, s, l = pixel[0], pixel[1], pixel[2]
         h *= 360
         c = (1 - abs(2 * l - 1)) * s
         x = c * (1 - abs((h / 60) % 2 - 1))
@@ -94,7 +94,7 @@ class HsvConverter(HueBasedConverter):
         cls,
         pixel: list[float],
     ):
-        pixel = pixel[0] / 255, pixel[1] / 255, pixel[2] / 255
+        pixel = pixel[0], pixel[1], pixel[2]
         c_min, c_max = min(pixel), max(pixel)
         delta = c_max - c_min
 
@@ -102,14 +102,14 @@ class HsvConverter(HueBasedConverter):
         s = 0 if c_max == 0 else delta / c_max
         v = c_max
 
-        return [round(h * 255), round(s * 255), round(v * 255)]
+        return [h, s, v]
 
     @classmethod
     def hsv_to_rgb(
         cls,
         pixel: list[float],
     ):
-        h, s, v = pixel[0] / 255, pixel[1] / 255, pixel[2] / 255
+        h, s, v = pixel[0], pixel[1], pixel[2]
         h *= 360
         c = v * s
         x = c * (1 - abs((h / 60) % 2 - 1))
@@ -127,7 +127,7 @@ class YCbCrBased:
         kr: float,
         kb: float,
     ):
-        r, g, b = pixel[0] / 255, pixel[1] / 255, pixel[2] / 255
+        r, g, b = pixel[0], pixel[1], pixel[2]
 
         y = kr * r + (1 - kr - kb) * g + kb * b
         cb = (b - y) / (2 * (1 - kb))
@@ -136,7 +136,7 @@ class YCbCrBased:
         cb += 0.5
         cr += 0.5
 
-        return [round(255 * y), round(255 * cb), round(255 * cr)]
+        return [y, cb, cr]
 
     @classmethod
     def to_rgb(
@@ -145,7 +145,7 @@ class YCbCrBased:
         kr: float,
         kb: float,
     ):
-        y, cb, cr = pixel[0] / 255, pixel[1] / 255, pixel[2] / 255
+        y, cb, cr = pixel[0], pixel[1], pixel[2]
 
         cb -= 0.5
         cr -= 0.5
@@ -154,7 +154,7 @@ class YCbCrBased:
         g = y - kb / (1 - kb - kr) * 2 * (1 - kb) * cb - kr / (1 - kb - kr) * 2 * (1 - kr) * cr
         b = y + 2 * (1 - kb) * cb
 
-        return [round(r * 255), round(g * 255), round(b * 255)]
+        return [r, g, b]
 
 
 class YCbCr601Converter(YCbCrBased):
@@ -183,7 +183,7 @@ class YCoCgConverter:
         cls,
         pixel: list[float],
     ):
-        r, g, b = pixel[0] / 255, pixel[1] / 255, pixel[2] / 255
+        r, g, b = pixel[0], pixel[1], pixel[2]
 
         y = r / 4 + g / 2 + b / 4
         co = r / 2 - b / 2
@@ -192,14 +192,14 @@ class YCoCgConverter:
         co += 0.5
         cg += 0.5
 
-        return [round(y * 255), round(co * 255), round(cg * 255)]
+        return [y, co, cg]
 
     @classmethod
     def ycocg_to_rgb(
         cls,
         pixel: list[float],
     ):
-        y, co, cg = pixel[0] / 255, pixel[1] / 255, pixel[2] / 255
+        y, co, cg = pixel[0], pixel[1], pixel[2]
 
         co -= 0.5
         cg -= 0.5
@@ -208,7 +208,7 @@ class YCoCgConverter:
         g = y + cg
         b = y - co - cg
 
-        return [round(r * 255), round(g * 255), round(b * 255)]
+        return [r, g, b]
 
 
 class YCbCr709Converter(YCbCrBased):
@@ -237,18 +237,14 @@ class CmyConverter:
         cls,
         pixel: list[float],
     ):
-        pixel[0], pixel[1], pixel[2] = pixel[0] / 255, pixel[1] / 255, pixel[2] / 255
-        return [round((1 - pixel[0]) * 255), round((1 - pixel[1]) * 255),
-                round((1 - pixel[2]) * 255)]
+        return [1 - pixel[0], 1 - pixel[1], 1 - pixel[2]]
 
     @classmethod
     def cmy_to_rgb(
         cls,
         pixel: list[float],
     ):
-        pixel[0], pixel[1], pixel[2] = pixel[0] / 255, pixel[1] / 255, pixel[2] / 255
-        return [round((1 - pixel[0]) * 255), round((1 - pixel[1]) * 255),
-                round((1 - pixel[2]) * 255)]
+        return [1 - pixel[0], 1 - pixel[1], 1 - pixel[2]]
 
 
 class ColorConverter:
@@ -269,6 +265,17 @@ class ColorConverter:
 
         rgb_content = self._convert_to_rgb(convert_from, content, bytes_per_pixel)
         return self._convert_from_rgb(self.convert_to, rgb_content, bytes_per_pixel)
+
+    def convert_px(
+        self,
+        convert_from: ColorFormat,
+        px: list[float],
+    ):
+        if self.convert_to == convert_from:
+            return px
+
+        rgb_px = self._convert_to_rgb(convert_from, px, 3)
+        return self._convert_from_rgb(self.convert_to, rgb_px, 3)
 
     @classmethod
     def _convert_to_rgb(

@@ -9,7 +9,6 @@ from src.validators.pnm import (
     validate_pnm_format,
     validate_file,
     validate_image_content,
-    validate_color_value,
 )
 
 
@@ -64,7 +63,8 @@ class PnmIO:
         self.__read_header()
 
         self.__pnm_file.content = [
-            ord(self.__file.read(1)) for _ in range(self.__pnm_file.get_size())
+            ord(self.__file.read(1)) / 255
+            for _ in range(self.__pnm_file.get_size())
         ]
 
         if self.__file.read(1):
@@ -75,7 +75,7 @@ class PnmIO:
             width=self.__pnm_file.width,
             height=self.__pnm_file.height,
             max_color=self.__pnm_file.max_color,
-            bytes_per_pixel=self.__pnm_file.bytes_per_pixel,
+            bytes_per_px=self.__pnm_file.bytes_per_pixel,
             content=self.__pnm_file.content,
         )
 

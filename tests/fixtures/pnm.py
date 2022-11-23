@@ -37,7 +37,7 @@ def valid_pnm_file_total_ui(file) -> typing.Tuple[str, PnmFileUI]:
         width=2,
         height=2,
         max_color=255,
-        bytes_per_pixel=1,
+        bytes_per_px=1,
         content=content,
     )
 

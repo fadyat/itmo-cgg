@@ -66,5 +66,5 @@ def test_valid_file_read_ui(
     assert pnm_file.width == expected_pnm_file.width
     assert pnm_file.height == expected_pnm_file.height
     assert pnm_file.max_color == expected_pnm_file.max_color
-    assert pnm_file.bytes_per_pixel == expected_pnm_file.bytes_per_pixel
+    assert pnm_file.bytes_per_px == expected_pnm_file.bytes_per_px
     assert tuple(pnm_file.content) == tuple(expected_pnm_file.content)
