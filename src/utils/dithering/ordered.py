@@ -1,5 +1,5 @@
 def bayer_matrix_8x8():
-    return [
+    matrix = [
         [0, 32, 8, 40, 2, 34, 10, 42],
         [48, 16, 56, 24, 50, 18, 58, 26],
         [12, 44, 4, 36, 14, 46, 6, 38],
@@ -9,6 +9,12 @@ def bayer_matrix_8x8():
         [15, 47, 7, 39, 13, 45, 5, 37],
         [63, 31, 55, 23, 61, 29, 53, 21],
     ]
+
+    for i in range(len(matrix)):
+        for j in range(len(matrix)):
+            matrix[i][j] /= 64
+
+    return matrix
 
 
 def ordered_dithering(
@@ -40,7 +46,7 @@ def ordered_pixel(
     bytes_per_px: int = 3,
 ) -> list[float]:
     value = bayer_matrix[y % len(bayer_matrix)][x % len(bayer_matrix)]
-    color = 0 if value < pixel else 1
+    color = 0 if value > pixel else 1
     return [color for _ in range(bytes_per_px)]
 
 
@@ -72,6 +78,6 @@ def ordered_pixel_byte(
     bayer_matrix: list[list[int]],
     bytes_per_px: int = 3,
 ) -> list[int]:
-    value = bayer_matrix[y % len(bayer_matrix)][x % len(bayer_matrix)]
-    color = 0 if value < pixel else 255
+    value = 255 * bayer_matrix[y % len(bayer_matrix)][x % len(bayer_matrix)]
+    color = 0 if value > pixel else 255
     return [color for _ in range(bytes_per_px)]

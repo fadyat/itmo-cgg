@@ -9,7 +9,7 @@ from src.utils.dithering.random import random_dithering_bytes
 
 
 class DitheringWidget(QWidget):
-    selected_file: str = "/Users/artyomfadeyev/GitHub/cg22-project-NeedForGirl/docs/lena.pnm"
+    selected_file: str = "/Users/artyomfadeyev/GitHub/cg22-project-NeedForGirl/docs/shrek.pnm"
 
     def __init__(
         self,
@@ -30,12 +30,12 @@ class DitheringWidget(QWidget):
 
         self.preview_label.setPixmap(
             create_px_map(
-                # ordered_dithering_bytes(
-                random_dithering_bytes(
+                ordered_dithering_bytes(
+                # random_dithering_bytes(
                     get_pixel_map_pxls(self.preview_label.pixmap()),
                     # 1,
                 # ),
-                #     self.preview_label.pixmap().width(),
+                    self.preview_label.pixmap().width(),
                 ),
                 self.preview_label.pixmap().width(),
                 self.preview_label.pixmap().height(),
