@@ -4,7 +4,6 @@ from PyQt6 import QtGui
 from PyQt6.QtCore import Qt, QSize, QRect
 from PyQt6.QtWidgets import QApplication, QHBoxLayout, QFrame, QLabel, QWidget
 
-from src.utils.dithering.floyd_steinberg import floyd_steinberg_dithering_bytes
 from src.utils.dithering.ordered import ordered_dithering_bytes
 
 
@@ -40,7 +39,7 @@ class DitheringWidget(QWidget):
         self.preview_label.setPixmap(
             create_px_map(
                 # floyd_steinberg_dithering_bytes(
-                    # atkinson_dithering_bytes(
+                # atkinson_dithering_bytes(
                 ordered_dithering_bytes(
                     # random_dithering_bytes(
                     get_pixel_map_pxls(self.preview_label.pixmap()),

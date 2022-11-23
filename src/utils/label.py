@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QLabel, QStyleFactory
+from PyQt6.QtWidgets import QLabel
 
 
 def create_beauty_label(text: str) -> QLabel:

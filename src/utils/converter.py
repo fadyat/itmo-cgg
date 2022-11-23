@@ -254,18 +254,6 @@ class ColorConverter:
     ):
         self.convert_to = convert_to
 
-    def convert(
-        self,
-        convert_from: ColorFormat,
-        content: list[float],
-        bytes_per_pixel: int,
-    ):
-        if self.convert_to == convert_from:
-            return content
-
-        rgb_content = self._convert_to_rgb(convert_from, content, bytes_per_pixel)
-        return self._convert_from_rgb(self.convert_to, rgb_content, bytes_per_pixel)
-
     def convert_px(
         self,
         convert_from: ColorFormat,
@@ -290,28 +278,21 @@ class ColorConverter:
 
         if convert_from == ColorFormat.HSL:
             convertor_function = HslConverter.hsl_to_rgb
-
-        if convert_from == ColorFormat.HSV:
+        elif convert_from == ColorFormat.HSV:
             convertor_function = HsvConverter.hsv_to_rgb
-
-        if convert_from == ColorFormat.YCbCr601:
+        elif convert_from == ColorFormat.YCbCr601:
             convertor_function = YCbCr601Converter.ycbcr601_to_rgb
-
-        if convert_from == ColorFormat.YCbCr709:
+        elif convert_from == ColorFormat.YCbCr709:
             convertor_function = YCbCr709Converter.ycbcr709_to_rgb
-
-        if convert_from == ColorFormat.CMY:
+        elif convert_from == ColorFormat.CMY:
             convertor_function = CmyConverter.cmy_to_rgb
-
-        if convert_from == ColorFormat.YCoCg:
+        elif convert_from == ColorFormat.YCoCg:
             convertor_function = YCoCgConverter.ycocg_to_rgb
-
-        if convertor_function is None:
+        elif convertor_function is None:
             raise ValueError(f"Unsupported color format: {convert_from}")
 
         return [
-            j
-            for i in range(0, len(content), bytes_per_pixel)
+            j for i in range(0, len(content), bytes_per_pixel)
             for j in convertor_function(content[i:i + bytes_per_pixel])
         ]
 
@@ -328,27 +309,20 @@ class ColorConverter:
 
         if convert_to == ColorFormat.HSL:
             convertor_function = HslConverter.rgb_to_hsl
-
-        if convert_to == ColorFormat.HSV:
+        elif convert_to == ColorFormat.HSV:
             convertor_function = HsvConverter.rgb_to_hsv
-
-        if convert_to == ColorFormat.YCbCr601:
+        elif convert_to == ColorFormat.YCbCr601:
             convertor_function = YCbCr601Converter.rgb_to_ycbcr601
-
-        if convert_to == ColorFormat.YCbCr709:
+        elif convert_to == ColorFormat.YCbCr709:
             convertor_function = YCbCr709Converter.rgb_to_ycbcr709
-
-        if convert_to == ColorFormat.CMY:
+        elif convert_to == ColorFormat.CMY:
             convertor_function = CmyConverter.rgb_to_cmy
-
-        if convert_to == ColorFormat.YCoCg:
+        elif convert_to == ColorFormat.YCoCg:
             convertor_function = YCoCgConverter.rgb_to_ycocg
-
-        if convertor_function is None:
+        elif convertor_function is None:
             raise ValueError(f"Unsupported color format: {convert_to}")
 
         return [
-            j
-            for i in range(0, len(content), bytes_per_pixel)
+            j for i in range(0, len(content), bytes_per_pixel)
             for j in convertor_function(content[i:i + bytes_per_pixel])
         ]
