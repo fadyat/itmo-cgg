@@ -17,7 +17,7 @@ from src.utils.label import create_beauty_label
 class ApplicationWindow(QMainWindow):
     toolbar_height: int = 30
     selected_file: str = "/Users/artyomfadeyev/GitHub/cg22-project-NeedForGirl/docs/lena.pnm"
-    picture_color_format = ColorFormat.RGB
+    picture_color_format: ColorFormat = ColorFormat.RGB
     new_color_format: ColorFormat = ColorFormat.RGB
     dithering_algo: DitheringAlgo = DitheringAlgo.NONE
     channels: list[QCheckBox] = []
@@ -152,8 +152,8 @@ class ApplicationWindow(QMainWindow):
     def change_dithering_algo(self):
         dithering_algo = self.dithering_selector.currentText()
 
-        new_color_format = self.new_color_format_selector
-        if dithering_algo != DitheringAlgo.NONE:
+        new_color_format = self.new_color_format
+        if DitheringAlgo[dithering_algo] != DitheringAlgo.NONE:
             self.new_color_format_selector.setEnabled(False)
             self.picture_color_format_selector.setEnabled(False)
             new_color_format = self.picture_color_format

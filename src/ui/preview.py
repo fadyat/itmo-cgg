@@ -12,7 +12,7 @@ from src.typedef import logs
 from src.ui.errors import PnmFileErrorMessage
 from src.utils.channels import try_delete_superfluous_channels
 from src.utils.converter import ColorFormat, ColorConverter
-from src.utils.dithering.resolver import DitheringAlgo
+from src.utils.dithering.resolver import DitheringAlgo, apply_dithering
 
 
 class FilePreview(QWidget):
@@ -51,7 +51,7 @@ class FilePreview(QWidget):
         converter = ColorConverter(new_color_format)
 
         for i in range(0, img.get_size(), img.bytes_per_px):
-            px = img.get_px(i, disabled_channels)
+            px = apply_dithering(dithering_algo, img, i, disabled_channels)
             px_upd = converter.convert_px(prev_color_format, px)
             painter.setPen(QtGui.QColor(*[
                 max(0, min(255, int(i * 255)))
@@ -59,8 +59,6 @@ class FilePreview(QWidget):
             ]))
             painter.drawPoint(QPoint(img.get_x(i), img.get_y(i)))
             img.set_px(i, px_upd)
-
-        # where to apply dithering?
 
         painter.end()
         self.label.setPixmap(px_map)

@@ -65,7 +65,6 @@ class PnmFileUI:
             self.content[x + i] = val[i]
 
     def get_px_255(self, x, disabled_channels) -> typing.List[int]:
-
         return [
             min(255, max(int(color * 255), 0))
             for color in self.get_px(x, disabled_channels)

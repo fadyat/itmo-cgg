@@ -1,38 +1,28 @@
-def floyd_steinberg_dithering_bytes(
-    content: list[int],
-    width: int,
-    bytes_per_px: int = 3,
+from src.entities.pnm import PnmFileUI
+
+
+def floyd_steinberg_pixel(
+    img: PnmFileUI,
+    pos: int,
+    disabled_channels: list[bool],
 ):
-    for i in range(0, len(content), bytes_per_px):
-        px = content[i]
-        new_px = 0 if px < 128 else 255
-        content[i] = new_px
-        error = px - new_px
-        for j in range(1, bytes_per_px):
-            content[i + j] = content[i]
+    px = img.get_px(pos, disabled_channels)
+    avg = sum(px) / len(px)
+    new_px = 0 if avg < 0.5 else 1
 
-        next_px = i + bytes_per_px
-        if next_px < len(content):
-            content[next_px] += error * 7 // 16
-            for j in range(1, bytes_per_px):
-                content[next_px + j] = content[next_px]
+    img.set_px(pos, [new_px, new_px, new_px])
+    error = avg - new_px
 
-        bottom_px = i + width * bytes_per_px
-        if bottom_px < len(content):
-            content[bottom_px] += error * 5 // 16
-            for j in range(1, bytes_per_px):
-                content[bottom_px + j] = content[bottom_px]
+    pxs_for_error_diffusion = [
+        (pos + img.bytes_per_px, 7 / 16),
+        (pos + img.width * img.bytes_per_px - img.bytes_per_px, 3 / 16),
+        (pos + img.width * img.bytes_per_px, 5 / 16),
+        (pos + img.width * img.bytes_per_px + img.bytes_per_px, 1 / 16),
+    ]
 
-        next_bottom_px = bottom_px + bytes_per_px
-        if next_bottom_px < len(content):
-            content[next_bottom_px] += error * 1 // 16
-            for j in range(1, bytes_per_px):
-                content[next_bottom_px + j] = content[next_bottom_px]
+    for px_pos, k in pxs_for_error_diffusion:
+        if px_pos < img.get_size():
+            new_value = img.content[px_pos] + error * k
+            img.set_px(px_pos, [new_value, new_value, new_value])
 
-        prev_bottom_px = bottom_px - bytes_per_px
-        if prev_bottom_px < len(content):
-            content[prev_bottom_px] += error * 3 // 16
-            for j in range(1, bytes_per_px):
-                content[prev_bottom_px + j] = content[prev_bottom_px]
-
-    return content
+    return img.get_px(pos, disabled_channels)

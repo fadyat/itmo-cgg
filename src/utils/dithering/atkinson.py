@@ -1,29 +1,30 @@
-def atkinson_dithering_bytes(
-    content: list[int],
-    width: int,
-    bytes_per_px: int = 3,
+from src.entities.pnm import PnmFileUI
+
+
+def atkinson_pixel(
+    img: PnmFileUI,
+    pos: int,
+    disabled_channels: list[bool],
 ):
-    for i in range(0, len(content), bytes_per_px):
-        px = content[i]
-        new_px = 0 if px < 128 else 255
-        content[i] = new_px
-        error = px - new_px
-        for j in range(1, bytes_per_px):
-            content[i + j] = content[i]
+    px = img.get_px(pos, disabled_channels)
+    avg = sum(px) / len(px)
+    new_px = 0 if avg < 0.5 else 1
 
-        pxs_for_error_diffusion = [
-            i + bytes_per_px,
-            i + 2 * bytes_per_px,
-            i + width * bytes_per_px - bytes_per_px,
-            i + width * bytes_per_px,
-            i + width * bytes_per_px + bytes_per_px,
-            i + 2 * width * bytes_per_px,
-        ]
+    img.set_px(pos, [new_px, new_px, new_px])
+    error = avg - new_px
 
-        for px in pxs_for_error_diffusion:
-            if px < len(content):
-                content[px] += error // 8
-                for j in range(1, bytes_per_px):
-                    content[px + j] = content[px]
+    pxs_for_error_diffusion = [
+        pos + img.bytes_per_px,
+        pos + 2 * img.bytes_per_px,
+        pos + img.width * img.bytes_per_px - img.bytes_per_px,
+        pos + img.width * img.bytes_per_px,
+        pos + img.width * img.bytes_per_px + img.bytes_per_px,
+        pos + 2 * img.width * img.bytes_per_px,
+    ]
 
-    return content
+    for px_pos in pxs_for_error_diffusion:
+        if px_pos < img.get_size():
+            new_value = img.content[px_pos] + error / 8
+            img.set_px(px_pos, [new_value, new_value, new_value])
+
+    return img.get_px(pos, disabled_channels)
