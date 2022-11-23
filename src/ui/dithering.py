@@ -4,12 +4,14 @@ from PyQt6 import QtGui
 from PyQt6.QtCore import Qt, QSize, QRect
 from PyQt6.QtWidgets import QApplication, QHBoxLayout, QFrame, QLabel, QWidget
 
+from src.utils.dithering.floyd_steinberg import floyd_steinberg_dithering_bytes
 from src.utils.dithering.ordered import ordered_dithering_bytes
-from src.utils.dithering.random import random_dithering_bytes
 
 
 class DitheringWidget(QWidget):
-    selected_file: str = "/Users/artyomfadeyev/GitHub/cg22-project-NeedForGirl/docs/shrek.pnm"
+    # selected_file: str = "/Users/artyomfadeyev/GitHub/dem.pnm"
+
+    # selected_file: str = "/Users/artyomfadeyev/GitHub/cg22-project-NeedForGirl/docs/lena.pnm"
 
     def __init__(
         self,
@@ -23,22 +25,33 @@ class DitheringWidget(QWidget):
         self.setLayout(self.preview_layout)
         self.preview_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.preview_frame.setFrameShape(QFrame.Shape.Box)
-        self.preview_label.setPixmap(QtGui.QPixmap(self.selected_file))
+        # save pixmap to file
+        self.preview_label.setPixmap(
+            # QtGui.QPixmap(self.selected_file)
+            create_gradient_px_map(800, 800)
+        )
+        # file = QFile("/Users/artyomfadeyev/GitHub/cg22-project-NeedForGirl/docs/gradient.png")
+        # file.open(QFile.OpenModeFlag.WriteOnly)
+        # self.preview_label.pixmap().save(file, "PNG")
         self.setFixedSize(QSize(800, 800))
         self.preview_layout.unsetContentsMargins()
         self.preview_layout.setSpacing(0)
 
         self.preview_label.setPixmap(
             create_px_map(
+                # floyd_steinberg_dithering_bytes(
+                    # atkinson_dithering_bytes(
                 ordered_dithering_bytes(
-                # random_dithering_bytes(
+                    # random_dithering_bytes(
                     get_pixel_map_pxls(self.preview_label.pixmap()),
+                    # bayer_matrix=bayer_matrix_8x8(),
                     # 1,
-                # ),
-                    self.preview_label.pixmap().width(),
+                    # ),
+                    width=self.preview_label.pixmap().width(),
                 ),
                 self.preview_label.pixmap().width(),
                 self.preview_label.pixmap().height(),
+                3,
             )
         )
 
