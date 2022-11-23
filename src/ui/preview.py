@@ -12,7 +12,7 @@ from src.typedef import logs
 from src.ui.errors import PnmFileErrorMessage
 from src.utils.channels import try_delete_superfluous_channels
 from src.utils.converter import ColorFormat, ColorConverter
-from src.utils.dithering import DitheringAlgo
+from src.utils.dithering.resolver import DitheringAlgo
 
 
 class FilePreview(QWidget):
@@ -59,6 +59,8 @@ class FilePreview(QWidget):
             ]))
             painter.drawPoint(QPoint(img.get_x(i), img.get_y(i)))
             img.set_px(i, px_upd)
+
+        # where to apply dithering?
 
         painter.end()
         self.label.setPixmap(px_map)

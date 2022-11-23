@@ -4,5 +4,5 @@ P5 = PNM_SUPPORTED_FORMATS[0]
 P6 = PNM_SUPPORTED_FORMATS[1]
 COLOR_MODELS = {'RGB': 1, 'HSL': 2, 'HSV': 3, 'YCbCr601': 4, 'YCbCr709': 5, 'YCoCg': 6, 'CMY': 7}
 DITHERING_ALGORITHMS = {
-    'None': 1, 'Random': 2, 'Ordered 8x8': 3, 'Floyd-Steinberg': 4, 'Atkinson': 5
+    'NONE': 0, 'RANDOM': 1, 'ORDERED_8X8': 2, 'FLOYD_STEINBERG': 3, 'ATKINSON': 4
 }

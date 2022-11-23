@@ -10,13 +10,13 @@ from PyQt6.QtWidgets import (
 from src import config
 from src.ui.preview import FilePreview
 from src.utils.converter import ColorFormat
-from src.utils.dithering import DitheringAlgo
+from src.utils.dithering.resolver import DitheringAlgo
 from src.utils.label import create_beauty_label
 
 
 class ApplicationWindow(QMainWindow):
     toolbar_height: int = 30
-    selected_file: str = "/Users/artyomfadeyev/GitHub/cg22-project-NeedForGirl/docs/lol.pnm"
+    selected_file: str = "/Users/artyomfadeyev/GitHub/cg22-project-NeedForGirl/docs/lena.pnm"
     picture_color_format = ColorFormat.RGB
     new_color_format: ColorFormat = ColorFormat.RGB
     dithering_algo: DitheringAlgo = DitheringAlgo.NONE
@@ -152,14 +152,28 @@ class ApplicationWindow(QMainWindow):
     def change_dithering_algo(self):
         dithering_algo = self.dithering_selector.currentText()
 
+        new_color_format = self.new_color_format_selector
+        if dithering_algo != DitheringAlgo.NONE:
+            self.new_color_format_selector.setEnabled(False)
+            self.picture_color_format_selector.setEnabled(False)
+            new_color_format = self.picture_color_format
+            for i in range(3):
+                self.channels[i].setEnabled(False)
+                self.channels[i].setChecked(False)
+        else:
+            self.new_color_format_selector.setEnabled(True)
+            self.picture_color_format_selector.setEnabled(True)
+            for i in range(3):
+                self.channels[i].setEnabled(True)
+
         if self.preview.update_preview(
             self.selected_file,
             self.picture_color_format,
-            self.new_color_format,
-            self.disabled_channels,
-            dithering_algo,
+            new_color_format,
+            [False, False, False],
+            DitheringAlgo[dithering_algo],
         ):
-            self.dithering_algo = dithering_algo
+            self.dithering_algo = DitheringAlgo[dithering_algo]
 
     def save_file(self):
         if not (file_name := QFileDialog.getSaveFileName(self, "Save file", "", "")[0]):

@@ -17,75 +17,15 @@ def bayer_matrix_8x8():
     return matrix
 
 
-def bayer_matrix_4x4():
-    matrix = [
-        [0, 8, 2, 10],
-        [12, 4, 14, 6],
-        [3, 11, 1, 9],
-        [15, 7, 13, 5],
-    ]
-
-    for i in range(len(matrix)):
-        for j in range(len(matrix)):
-            matrix[i][j] /= 16
-
-    return matrix
+bayer_matrix = bayer_matrix_8x8()
 
 
-def bayer_matrix_2x2():
-    matrix = [
-        [0, 2],
-        [3, 1],
-    ]
-
-    for i in range(len(matrix)):
-        for j in range(len(matrix)):
-            matrix[i][j] /= 4
-
-    return matrix
-
-
-def bayer_matrix_3x3():
-    matrix = [
-        [0, 8, 2],
-        [10, 4, 12],
-        [3, 11, 1],
-    ]
-
-    for i in range(len(matrix)):
-        for j in range(len(matrix)):
-            matrix[i][j] /= 16
-
-    return matrix
-
-
-def ordered_dithering_bytes(
-    content: list[int],
-    width: int,
-    bayer_matrix=None,
-    bytes_per_px: int = 3,
-):
-    if bayer_matrix is None:
-        bayer_matrix = bayer_matrix_8x8()
-
-    return [
-        j for i in range(0, len(content), bytes_per_px)
-        for j in ordered_pixel_byte(
-            content[i:i + bytes_per_px],
-            i // bytes_per_px % width,
-            i // bytes_per_px // width,
-            bayer_matrix,
-        )
-    ]
-
-
-def ordered_pixel_byte(
-    pixel: list[int],
+def ordered_pixel(
+    pixel: list[float],
     x: int,
     y: int,
-    bayer_matrix: list[list[int]],
 ) -> list[int]:
-    r, g, b = pixel
-    avg = (r + g + b) // 3
     bayer = bayer_matrix[y % len(bayer_matrix)][x % len(bayer_matrix[0])]
-    return [0 if avg < bayer * 255 else 255] * 3
+    avg = sum(pixel) / len(pixel)
+    color = 0 if bayer >= avg else 1
+    return [color, color, color]
