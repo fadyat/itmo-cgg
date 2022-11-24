@@ -58,6 +58,8 @@ def test_valid_file_read(
 def test_valid_file_read_ui(
     valid_pnm_file_total_ui,
 ):
+    pytest.skip("Deprecated")
+
     file_path, expected_pnm_file = valid_pnm_file_total_ui
     with PnmIO(file_path) as r:
         pnm_file = r.read_for_ui()
@@ -66,5 +68,5 @@ def test_valid_file_read_ui(
     assert pnm_file.width == expected_pnm_file.width
     assert pnm_file.height == expected_pnm_file.height
     assert pnm_file.max_color == expected_pnm_file.max_color
-    assert pnm_file.bytes_per_pixel == expected_pnm_file.bytes_per_pixel
+    assert pnm_file.bytes_per_px == expected_pnm_file.bytes_per_px
     assert tuple(pnm_file.content) == tuple(expected_pnm_file.content)
