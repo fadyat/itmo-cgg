@@ -8,9 +8,11 @@ from PyQt6.QtWidgets import (
     QCheckBox, )
 
 from src import config
+from src.ui.gamma import GammaWidget
 from src.ui.preview import FilePreview
 from src.utils.converter import ColorFormat
 from src.utils.dithering.resolver import DitheringAlgo
+from src.utils.gamma import GammaOption
 from src.utils.label import create_beauty_label
 
 
@@ -22,6 +24,7 @@ class ApplicationWindow(QMainWindow):
     dithering_algo: DitheringAlgo = DitheringAlgo.NONE
     channels: list[QCheckBox] = []
     disabled_channels = [False, False, False]
+    dithering_bits: int = 1
 
     def __init__(self):
         super().__init__()
@@ -35,6 +38,9 @@ class ApplicationWindow(QMainWindow):
 
         self.edit_action = file_menu.addAction("Save")
         self.edit_action.triggered.connect(self.save_file)
+
+        self.gamma_action = file_menu.addAction("Gamma")
+        self.gamma_action.triggered.connect(self.change_gamma)
 
         self.toolbar.addWidget(create_beauty_label("From"))
         self.picture_color_format_selector = QComboBox(self)
@@ -59,7 +65,7 @@ class ApplicationWindow(QMainWindow):
         self.toolbar.addWidget(create_beauty_label("Dithering"))
         self.dithering_selector = QComboBox(self)
         self.dithering_selector.addItems(config.DITHERING_ALGORITHMS)
-        self.dithering_selector.currentTextChanged.connect(self.change_dithering_algo)
+        self.dithering_selector.currentTextChanged.connect(self.change_dithering)
         self.dithering_selector.setStyle(QStyleFactory.create("Fusion"))
         self.dithering_selector.setStyleSheet(
             "QComboBox { font-size: 10px; padding-left: 5px; }"
@@ -68,6 +74,14 @@ class ApplicationWindow(QMainWindow):
         self.toolbar.setStyleSheet(
             "QToolBar { background-color: #e0e0e0; padding-left: 5px; }"
         )
+        self.dithering_bits_selector = QComboBox(self)
+        self.dithering_bits_selector.addItems(["1", "2", "3", "4", "5", "6", "7", "8"])
+        self.dithering_bits_selector.currentTextChanged.connect(self.change_dithering)
+        self.dithering_bits_selector.setStyle(QStyleFactory.create("Fusion"))
+        self.dithering_bits_selector.setStyleSheet(
+            "QComboBox { font-size: 10px; padding-left: 5px; }"
+        )
+        self.toolbar.addWidget(self.dithering_bits_selector)
 
         for i in range(3):
             self.toolbar.addSeparator()
@@ -79,6 +93,7 @@ class ApplicationWindow(QMainWindow):
             self.toolbar.addWidget(self.channel)
             self.channels.append(self.channel)
 
+        self.edit_gamma_widget = GammaWidget(self)
         self.setCentralWidget(self.preview)
         self.show()
 
@@ -105,7 +120,10 @@ class ApplicationWindow(QMainWindow):
             self.picture_color_format,
             self.new_color_format,
             self.disabled_channels,
-            self.dithering_algo
+            self.dithering_algo,
+            self.dithering_bits,
+            self.edit_gamma_widget.get_from_gamma(),
+            self.edit_gamma_widget.get_to_gamma(),
         ):
             self.selected_file = file_name
 
@@ -131,7 +149,10 @@ class ApplicationWindow(QMainWindow):
             self.picture_color_format,
             self.new_color_format,
             disabled_channels,
-            self.dithering_algo
+            self.dithering_algo,
+            self.dithering_bits,
+            self.edit_gamma_widget.get_from_gamma(),
+            self.edit_gamma_widget.get_to_gamma(),
         ):
             self.disabled_channels = disabled_channels
 
@@ -144,13 +165,17 @@ class ApplicationWindow(QMainWindow):
             ColorFormat[picture_color_format],
             ColorFormat[new_color_format],
             self.disabled_channels,
-            self.dithering_algo
+            self.dithering_algo,
+            self.dithering_bits,
+            self.edit_gamma_widget.get_from_gamma(),
+            self.edit_gamma_widget.get_to_gamma(),
         ):
             self.picture_color_format = ColorFormat[picture_color_format]
             self.new_color_format = ColorFormat[new_color_format]
 
-    def change_dithering_algo(self):
+    def change_dithering(self):
         dithering_algo = self.dithering_selector.currentText()
+        dithering_bits = int(self.dithering_bits_selector.currentText())
 
         new_color_format = self.new_color_format
         if DitheringAlgo[dithering_algo] != DitheringAlgo.NONE:
@@ -172,14 +197,39 @@ class ApplicationWindow(QMainWindow):
             new_color_format,
             [False, False, False],
             DitheringAlgo[dithering_algo],
+            dithering_bits,
+            self.edit_gamma_widget.get_from_gamma(),
+            self.edit_gamma_widget.get_to_gamma(),
         ):
             self.dithering_algo = DitheringAlgo[dithering_algo]
+            self.dithering_bits = dithering_bits
 
     def save_file(self):
         if not (file_name := QFileDialog.getSaveFileName(self, "Save file", "", "")[0]):
             return
 
         self.preview.save_preview(file_name, self.disabled_channels)
+
+    def change_gamma(self):
+        self.edit_gamma_widget.show()
+
+    def apply_gamma(
+        self,
+        gamma_option: GammaOption,
+    ):
+        if self.preview.update_preview(
+            self.selected_file,
+            self.picture_color_format,
+            self.new_color_format,
+            self.disabled_channels,
+            self.dithering_algo,
+            self.dithering_bits,
+            self.edit_gamma_widget.get_from_gamma(),
+            self.edit_gamma_widget.get_to_gamma(),
+            gamma_option=gamma_option,
+        ):
+            if gamma_option == GammaOption.CONVERT:
+                self.edit_gamma_widget.set_from_gamma(self.edit_gamma_widget.get_to_gamma())
 
     def get_disabled_channels(self):
         is_p5 = not self.channels[1].isEnabled()

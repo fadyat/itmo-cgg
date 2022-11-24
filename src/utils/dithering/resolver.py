@@ -20,12 +20,13 @@ def apply_dithering(
     img: PnmFileUI,
     pos: int,
     disabled_channels: list[bool],
+    dithering_bits_values: list[float],
 ):
     if algo == DitheringAlgo.NONE:
         return img.get_px(pos, disabled_channels)
 
     if algo == DitheringAlgo.RANDOM:
-        return random_pixel(img.get_px(pos, disabled_channels))
+        return random_pixel(img.get_px(pos, disabled_channels), dithering_bits_values)
 
     if algo == DitheringAlgo.ORDERED_8X8:
         return ordered_pixel(img.get_px(pos, disabled_channels), img.get_x(pos), img.get_y(pos))

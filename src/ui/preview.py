@@ -13,6 +13,7 @@ from src.ui.errors import PnmFileErrorMessage
 from src.utils.channels import try_delete_superfluous_channels
 from src.utils.converter import ColorFormat, ColorConverter
 from src.utils.dithering.resolver import DitheringAlgo, apply_dithering
+from src.utils.gamma import assign_gamma, GammaOption, convert_gamma
 
 
 class FilePreview(QWidget):
@@ -38,6 +39,10 @@ class FilePreview(QWidget):
         new_color_format: ColorFormat,
         disabled_channels: list[bool],
         dithering_algo: DitheringAlgo,
+        dithering_bits: int,
+        prev_gamma: float,
+        next_gamma: float,
+        gamma_option: GammaOption = GammaOption.ASSIGN,
     ) -> bool:
         try:
             with PnmIO(file_name) as r:
@@ -49,10 +54,20 @@ class FilePreview(QWidget):
         px_map = QtGui.QPixmap(QSize(img.width, img.height))
         painter = QtGui.QPainter(px_map)
         converter = ColorConverter(new_color_format)
+        dithering_bits_values = [
+            i / (2 ** dithering_bits - 1)
+            for i in range(2 ** dithering_bits)
+        ]
 
         for i in range(0, img.get_size(), img.bytes_per_px):
-            px = apply_dithering(dithering_algo, img, i, disabled_channels)
+            px = apply_dithering(dithering_algo, img, i, disabled_channels, dithering_bits_values)
             px_upd = converter.convert_px(prev_color_format, px)
+
+            if gamma_option == GammaOption.ASSIGN:
+                px_upd = assign_gamma(px_upd, prev_gamma, next_gamma)
+            elif gamma_option == GammaOption.CONVERT:
+                px_upd = convert_gamma(px_upd, prev_gamma, next_gamma)
+
             painter.setPen(QtGui.QColor(*[
                 max(0, min(255, int(i * 255)))
                 for i in px_upd

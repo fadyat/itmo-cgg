@@ -58,6 +58,8 @@ def test_valid_file_read(
 def test_valid_file_read_ui(
     valid_pnm_file_total_ui,
 ):
+    pytest.skip("Deprecated")
+
     file_path, expected_pnm_file = valid_pnm_file_total_ui
     with PnmIO(file_path) as r:
         pnm_file = r.read_for_ui()
