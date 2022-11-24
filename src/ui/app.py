@@ -128,13 +128,9 @@ class ApplicationWindow(QMainWindow):
             self.selected_file = file_name
 
         if self.preview.get_selected_file_format() == config.P5:
-            self.new_color_format_selector.setEnabled(False)
-            self.picture_color_format_selector.setEnabled(False)
             self.channels[1].setEnabled(False)
             self.channels[2].setEnabled(False)
         else:
-            self.new_color_format_selector.setEnabled(True)
-            self.picture_color_format_selector.setEnabled(True)
             self.channels[1].setEnabled(True)
             self.channels[2].setEnabled(True)
 
@@ -177,24 +173,10 @@ class ApplicationWindow(QMainWindow):
         dithering_algo = self.dithering_selector.currentText()
         dithering_bits = int(self.dithering_bits_selector.currentText())
 
-        new_color_format = self.new_color_format
-        if DitheringAlgo[dithering_algo] != DitheringAlgo.NONE:
-            self.new_color_format_selector.setEnabled(False)
-            self.picture_color_format_selector.setEnabled(False)
-            new_color_format = self.picture_color_format
-            for i in range(3):
-                self.channels[i].setEnabled(False)
-                self.channels[i].setChecked(False)
-        else:
-            self.new_color_format_selector.setEnabled(True)
-            self.picture_color_format_selector.setEnabled(True)
-            for i in range(3):
-                self.channels[i].setEnabled(True)
-
         if self.preview.update_preview(
             self.selected_file,
             self.picture_color_format,
-            new_color_format,
+            self.new_color_format,
             [False, False, False],
             DitheringAlgo[dithering_algo],
             dithering_bits,

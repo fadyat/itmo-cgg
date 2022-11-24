@@ -60,7 +60,7 @@ class FilePreview(QWidget):
         ]
 
         for i in range(0, img.get_size(), img.bytes_per_px):
-            px = apply_dithering(dithering_algo, img, i, disabled_channels, dithering_bits_values)
+            px = img.get_px(i, disabled_channels)
             px_upd = converter.convert_px(prev_color_format, px)
 
             if gamma_option == GammaOption.ASSIGN:
@@ -68,12 +68,17 @@ class FilePreview(QWidget):
             elif gamma_option == GammaOption.CONVERT:
                 px_upd = convert_gamma(px_upd, prev_gamma, next_gamma)
 
+            img.set_px(i, px_upd)
+
+        for i in range(0, img.get_size(), img.bytes_per_px):
+            px = apply_dithering(dithering_algo, img, i, disabled_channels, dithering_bits_values)
             painter.setPen(QtGui.QColor(*[
                 max(0, min(255, int(i * 255)))
-                for i in px_upd
+                for i in px
             ]))
+
             painter.drawPoint(QPoint(img.get_x(i), img.get_y(i)))
-            img.set_px(i, px_upd)
+            img.set_px(i, px)
 
         painter.end()
         self.label.setPixmap(px_map)

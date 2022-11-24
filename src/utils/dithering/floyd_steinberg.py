@@ -1,14 +1,16 @@
 from src.entities.pnm import PnmFileUI
+from src.utils.dithering import find_closest_px
 
 
 def floyd_steinberg_pixel(
     img: PnmFileUI,
     pos: int,
     disabled_channels: list[bool],
+    dithering_bits_values: list[float],
 ):
     px = img.get_px(pos, disabled_channels)
     avg = sum(px) / len(px)
-    new_px = 0 if avg < 0.5 else 1
+    new_px = find_closest_px(avg, dithering_bits_values)
 
     img.set_px(pos, [new_px, new_px, new_px])
     error = avg - new_px

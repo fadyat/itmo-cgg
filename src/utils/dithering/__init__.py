@@ -2,7 +2,7 @@ import typing
 from bisect import bisect_left
 
 
-def resolve_pixel_dither(
+def find_closest_px(
     counted_value: float,
     dithering_bits_values: typing.List[float],
 ) -> float:

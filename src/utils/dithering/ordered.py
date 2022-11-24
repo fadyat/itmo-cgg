@@ -1,3 +1,6 @@
+from src.utils.dithering import find_closest_px
+
+
 def bayer_matrix_8x8():
     matrix = [
         [0, 32, 8, 40, 2, 34, 10, 42],
@@ -24,8 +27,13 @@ def ordered_pixel(
     pixel: list[float],
     x: int,
     y: int,
-) -> list[int]:
+    dithering_bits_values: list[float],
+) -> list[float]:
     bayer = bayer_matrix[y % len(bayer_matrix)][x % len(bayer_matrix[0])]
     avg = sum(pixel) / len(pixel)
-    color = 0 if bayer >= avg else 1
+    r = 1 / len(dithering_bits_values)
+    color = find_closest_px(
+        (avg + r * (bayer - .5)),
+        dithering_bits_values
+    )
     return [color, color, color]

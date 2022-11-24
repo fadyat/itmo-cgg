@@ -29,12 +29,17 @@ def apply_dithering(
         return random_pixel(img.get_px(pos, disabled_channels), dithering_bits_values)
 
     if algo == DitheringAlgo.ORDERED_8X8:
-        return ordered_pixel(img.get_px(pos, disabled_channels), img.get_x(pos), img.get_y(pos))
+        return ordered_pixel(
+            img.get_px(pos, disabled_channels),
+            img.get_x(pos),
+            img.get_y(pos),
+            dithering_bits_values
+        )
 
     if algo == DitheringAlgo.FLOYD_STEINBERG:
-        return floyd_steinberg_pixel(img, pos, disabled_channels)
+        return floyd_steinberg_pixel(img, pos, disabled_channels, dithering_bits_values)
 
     if algo == DitheringAlgo.ATKINSON:
-        return atkinson_pixel(img, pos, disabled_channels)
+        return atkinson_pixel(img, pos, disabled_channels, dithering_bits_values)
 
     raise ValueError(f"Unknown dithering algorithm: {algo}")
