@@ -101,3 +101,15 @@ def convert_gamma(
         0 if channel_value < 0 else 1 if channel_value > 1 else channel_value
         for channel_value in from_linear(recounted, next_gamma)
     ]
+
+
+def resolve_gamma(
+    px: list[float],
+    prev_gamma: float,
+    next_gamma: float,
+    gamma_option: GammaOption,
+) -> list[float]:
+    if gamma_option == GammaOption.ASSIGN:
+        return assign_gamma(px, prev_gamma, next_gamma)
+
+    return convert_gamma(px, prev_gamma, next_gamma)

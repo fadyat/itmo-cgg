@@ -13,7 +13,8 @@ from src.ui.errors import PnmFileErrorMessage
 from src.utils.channels import try_delete_superfluous_channels
 from src.utils.converter import ColorFormat, ColorConverter
 from src.utils.dithering.resolver import DitheringAlgo, apply_dithering
-from src.utils.gamma import assign_gamma, GammaOption, convert_gamma
+from src.utils.gamma import GammaOption, resolve_gamma
+from src.utils.scaling.resolver import ScalingAlgo
 
 
 class FilePreview(QWidget):
@@ -43,6 +44,9 @@ class FilePreview(QWidget):
         prev_gamma: float,
         next_gamma: float,
         gamma_option: GammaOption = GammaOption.ASSIGN,
+        scaling_algo: ScalingAlgo = ScalingAlgo.NONE,
+        new_width: int = None,
+        new_height: int = None,
     ) -> bool:
         try:
             with PnmIO(file_name) as r:
@@ -51,6 +55,7 @@ class FilePreview(QWidget):
             PnmFileErrorMessage(str(e), self, logs).show()
             return False
 
+        # need to change pixmap size
         px_map = QtGui.QPixmap(QSize(img.width, img.height))
         painter = QtGui.QPainter(px_map)
         converter = ColorConverter(new_color_format)
@@ -62,16 +67,15 @@ class FilePreview(QWidget):
         for i in range(0, img.get_size(), img.bytes_per_px):
             px = img.get_px(i, disabled_channels)
             px_upd = converter.convert_px(prev_color_format, px)
-
-            if gamma_option == GammaOption.ASSIGN:
-                px_upd = assign_gamma(px_upd, prev_gamma, next_gamma)
-            elif gamma_option == GammaOption.CONVERT:
-                px_upd = convert_gamma(px_upd, prev_gamma, next_gamma)
-
+            px_upd = resolve_gamma(px_upd, prev_gamma, next_gamma, gamma_option)
             img.set_px(i, px_upd)
 
         for i in range(0, img.get_size(), img.bytes_per_px):
             px = apply_dithering(dithering_algo, img, i, disabled_channels, dithering_bits_values)
+
+            # need to apply scaling
+
+            # need to change color
             painter.setPen(QtGui.QColor(*[
                 max(0, min(255, int(i * 255)))
                 for i in px
