@@ -14,7 +14,7 @@ from src.utils.channels import try_delete_superfluous_channels
 from src.utils.converter import ColorFormat, ColorConverter
 from src.utils.dithering.resolver import DitheringAlgo, apply_dithering
 from src.utils.gamma import GammaOption, resolve_gamma
-from src.utils.scaling.resolver import ScalingAlgo
+from src.utils.scaling.resolver import ScalingAlgo, apply_scaling
 
 
 class FilePreview(QWidget):
@@ -43,10 +43,10 @@ class FilePreview(QWidget):
         dithering_bits: int,
         prev_gamma: float,
         next_gamma: float,
-        gamma_option: GammaOption = GammaOption.ASSIGN,
-        scaling_algo: ScalingAlgo = ScalingAlgo.NONE,
+        gamma_option: GammaOption,
         new_width: int = None,
         new_height: int = None,
+        scaling_algo: ScalingAlgo = ScalingAlgo.NONE,
     ) -> bool:
         try:
             with PnmIO(file_name) as r:
@@ -55,7 +55,13 @@ class FilePreview(QWidget):
             PnmFileErrorMessage(str(e), self, logs).show()
             return False
 
-        # need to change pixmap size
+        if new_width is None:
+            new_width = img.width
+
+        if new_height is None:
+            new_height = img.height
+
+        img = apply_scaling(scaling_algo, img, new_width, new_height)
         px_map = QtGui.QPixmap(QSize(img.width, img.height))
         painter = QtGui.QPainter(px_map)
         converter = ColorConverter(new_color_format)
@@ -72,10 +78,6 @@ class FilePreview(QWidget):
 
         for i in range(0, img.get_size(), img.bytes_per_px):
             px = apply_dithering(dithering_algo, img, i, disabled_channels, dithering_bits_values)
-
-            # need to apply scaling
-
-            # need to change color
             painter.setPen(QtGui.QColor(*[
                 max(0, min(255, int(i * 255)))
                 for i in px

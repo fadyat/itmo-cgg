@@ -128,6 +128,7 @@ class ApplicationWindow(QMainWindow):
             self.dithering_bits,
             self.edit_gamma_widget.get_from_gamma(),
             self.edit_gamma_widget.get_to_gamma(),
+            GammaOption.ASSIGN,
         ):
             self.selected_file = file_name
 
@@ -156,6 +157,10 @@ class ApplicationWindow(QMainWindow):
             self.dithering_bits,
             self.edit_gamma_widget.get_from_gamma(),
             self.edit_gamma_widget.get_to_gamma(),
+            GammaOption.ASSIGN,
+            self.scaling_widget.get_width(),
+            self.scaling_widget.get_height(),
+            self.scaling_widget.get_scaling_algorithm(),
         ):
             self.disabled_channels = disabled_channels
 
@@ -172,6 +177,10 @@ class ApplicationWindow(QMainWindow):
             self.dithering_bits,
             self.edit_gamma_widget.get_from_gamma(),
             self.edit_gamma_widget.get_to_gamma(),
+            GammaOption.ASSIGN,
+            self.scaling_widget.get_width(),
+            self.scaling_widget.get_height(),
+            self.scaling_widget.get_scaling_algorithm(),
         ):
             self.picture_color_format = ColorFormat[picture_color_format]
             self.new_color_format = ColorFormat[new_color_format]
@@ -189,6 +198,10 @@ class ApplicationWindow(QMainWindow):
             dithering_bits,
             self.edit_gamma_widget.get_from_gamma(),
             self.edit_gamma_widget.get_to_gamma(),
+            GammaOption.ASSIGN,
+            self.scaling_widget.get_width(),
+            self.scaling_widget.get_height(),
+            self.scaling_widget.get_scaling_algorithm(),
         ):
             self.dithering_algo = DitheringAlgo[dithering_algo]
             self.dithering_bits = dithering_bits
@@ -218,7 +231,10 @@ class ApplicationWindow(QMainWindow):
             self.dithering_bits,
             self.edit_gamma_widget.get_from_gamma(),
             self.edit_gamma_widget.get_to_gamma(),
-            gamma_option=gamma_option,
+            gamma_option,
+            self.scaling_widget.get_width(),
+            self.scaling_widget.get_height(),
+            self.scaling_widget.get_scaling_algorithm(),
         ):
             if gamma_option == GammaOption.CONVERT:
                 self.edit_gamma_widget.set_from_gamma(self.edit_gamma_widget.get_to_gamma())
@@ -249,9 +265,10 @@ class ApplicationWindow(QMainWindow):
             self.dithering_bits,
             self.edit_gamma_widget.get_from_gamma(),
             self.edit_gamma_widget.get_to_gamma(),
-            scaling_algo=algorithm,
-            new_width=new_width,
-            new_height=new_height,
+            GammaOption.ASSIGN,
+            new_width,
+            new_height,
+            algorithm,
         ):
             self.scaling_widget.set_width(new_width)
             self.scaling_widget.set_height(new_height)

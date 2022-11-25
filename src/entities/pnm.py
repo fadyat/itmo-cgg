@@ -47,12 +47,15 @@ class PnmFileUI:
     def get_size(self):
         return self.width * self.height * self.bytes_per_px
 
-    def get_px(self, x, disabled_channels) -> typing.List[float]:
+    def get_px(self, x, disabled_channels: list[bool] = None) -> typing.List[float]:
         first_px = x
         colors = self.content[first_px: first_px + self.bytes_per_px]
 
         if len(colors) == 1:
             colors = [colors[0], colors[0], colors[0]]
+
+        if not disabled_channels:
+            return colors
 
         for i, px in enumerate(colors):
             if disabled_channels[i]:
