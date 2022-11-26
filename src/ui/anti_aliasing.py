@@ -69,10 +69,19 @@ class PicturePreviewWidget(QWidget):
         self.colorPalette_button = QPushButton("Color")
         self.preview_layout.addWidget(self.colorPalette_button)
         self.colorPalette_button.clicked.connect(self.chooseColor)
+        self.current_color = (0, 0, 0)
         self.clear_button = QPushButton("Clear")
         self.preview_layout.addWidget(self.clear_button)
         self.clear_button.clicked.connect(self.clear)
-        self.current_color = (0, 0, 0)
+        self.thickness_input = QLineEdit()
+        self.thickness_input.setText("1")
+        self.preview_layout.addWidget(self.thickness_input)
+        self.current_thickness = 1
+        self.thickness_input.textChanged.connect(self.change_thickness)
+
+    def change_thickness(self):
+        if self.thickness_input.text().isdigit():
+            self.current_thickness = int(self.thickness_input.text())
 
     def clear(self):
         px_map = QtGui.QPixmap(QSize(self.pnm_data.width, self.pnm_data.height))
@@ -183,7 +192,7 @@ class PicturePreviewWidget(QWidget):
                 self.draw_pixels[0],
                 self.draw_pixels[1],
                 self.current_color[0:3],
-                5,
+                self.current_thickness,
             )
             self.draw_pixels = []
             self.preview_label.setPixmap(QtGui.QPixmap.fromImage(img))
