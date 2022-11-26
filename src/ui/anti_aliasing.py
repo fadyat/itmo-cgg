@@ -78,6 +78,15 @@ class PicturePreviewWidget(QWidget):
         self.preview_layout.addWidget(self.thickness_input)
         self.current_thickness = 1
         self.thickness_input.textChanged.connect(self.change_thickness)
+        self.transparency_input = QLineEdit()
+        self.transparency_input.setText("1.0")
+        self.preview_layout.addWidget(self.transparency_input)
+        self.current_transparency = 1.0
+        self.transparency_input.textChanged.connect(self.change_transparency)
+
+    def change_transparency(self):
+        if self.transparency_input.text().isdigit():
+            self.current_transparency = float(self.transparency_input.text())
 
     def change_thickness(self):
         if self.thickness_input.text().isdigit():
@@ -120,9 +129,10 @@ class PicturePreviewWidget(QWidget):
             r, g, b, _ = img.pixelColor(x, y).getRgb()
             img.setPixelColor(x, y, QtGui.QColor(compose_color(r, color[0]),
                                                  compose_color(g, color[1]),
-                                                 compose_color(b, color[2])))
+                                                 compose_color(b, color[2]),
+                                                 30))
 
-    def draw_line(self, img, p1, p2, color, thickness):
+    def draw_line(self, img, p1, p2, color):
         x1, y1 = p1
         x2, y2 = p2
         dx, dy = x2 - x1, y2 - y1
@@ -151,8 +161,8 @@ class PicturePreviewWidget(QWidget):
         xend = draw_endpoint(p(*p2))
 
         for x in range(xstart, xend + 1):
-            for dx in range(thickness + 1):
-                for dy in range(thickness + 1):
+            for dx in range(self.current_thickness + 1):
+                for dy in range(self.current_thickness + 1):
                     if 0 <= x - dx < img.width() and 0 <= intery - dy < img.height():
                         self.putpixel(img, p(x - dx, int(intery) - dy), color, self._rfpart(intery))
                         self.putpixel(img, p(x - dx, int(intery) - dy + 1), color, self._fpart(intery))
@@ -191,8 +201,7 @@ class PicturePreviewWidget(QWidget):
                 img,
                 self.draw_pixels[0],
                 self.draw_pixels[1],
-                self.current_color[0:3],
-                self.current_thickness,
+                self.current_color[0:3]
             )
             self.draw_pixels = []
             self.preview_label.setPixmap(QtGui.QPixmap.fromImage(img))
