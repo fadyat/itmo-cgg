@@ -101,6 +101,34 @@ class ApplicationWindow(QMainWindow):
         self.scaling_widget = ScalingWidget(self)
         self.setCentralWidget(self.preview)
 
+        self.select_file_test()
+
+    def select_file_test(self):
+        self.preview.update_preview(
+            self.selected_file,
+            self.picture_color_format,
+            self.new_color_format,
+            self.disabled_channels,
+            self.dithering_algo,
+            self.dithering_bits,
+            self.edit_gamma_widget.get_from_gamma(),
+            self.edit_gamma_widget.get_to_gamma(),
+            GammaOption.ASSIGN
+        )
+
+        if self.preview.get_selected_file_format() == config.P5:
+            self.channels[1].setEnabled(False)
+            self.channels[2].setEnabled(False)
+        else:
+            self.channels[1].setEnabled(True)
+            self.channels[2].setEnabled(True)
+
+        for i in range(3):
+            self.channels[i].setChecked(False)
+
+        self.scaling_widget.set_width(self.preview.prev_correct_image.width)
+        self.scaling_widget.set_height(self.preview.prev_correct_image.height)
+
     def init_window_itself(self):
         self.setWindowTitle("Photo Editor")
         self.setContentsMargins(0, 0, 0, 0)

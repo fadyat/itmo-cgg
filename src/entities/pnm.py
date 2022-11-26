@@ -82,4 +82,5 @@ class PnmFileUI:
         return real_pos // self.width
 
     def __str__(self):
-        return f"{self.pnm_format} {self.width} {self.height} {self.max_color} {self.bytes_per_px}"
+        return f"{self.pnm_format} {self.width} {self.height} " \
+               f"{self.max_color} {self.bytes_per_px} {len(self.content)}"

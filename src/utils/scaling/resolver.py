@@ -1,6 +1,7 @@
 import enum
 
 from src.entities.pnm import PnmFileUI
+from src.utils.scaling.bilinear import bilinear_scaling
 from src.utils.scaling.nearest import nearest_point_scaling
 
 
@@ -27,4 +28,7 @@ def apply_scaling(
     if algo == ScalingAlgo.NEAREST_NEIGHBOR:
         return nearest_point_scaling(img, new_width, new_height)
 
-    raise NotImplementedError("Scaling algorithm is not implemented")
+    if algo == ScalingAlgo.BILINEAR:
+        return bilinear_scaling(img, new_width, new_height)
+
+    return img
