@@ -1,5 +1,6 @@
 from PyQt6 import QtGui
 from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtGui import QImage
 from PyQt6.QtWidgets import (
     QWidget,
     QHBoxLayout,
@@ -54,6 +55,7 @@ class PicturePreviewWidget(QWidget):
             self,
     ):
         super().__init__()
+        self.draw_pixels = []
         self.pnm_data = None
         self.preview_layout = QHBoxLayout()
         self.preview_frame = QFrame()
@@ -63,23 +65,60 @@ class PicturePreviewWidget(QWidget):
         self.setLayout(self.preview_layout)
         self.preview_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-    def Bresenham(self, px_map, x1, y1, x2, y2):
-        dx = abs(x2 - x1)
-        dy = abs(y2 - y1)
-        sx = 1 if x1 < x2 else -1
-        sy = 1 if y1 < y2 else -1
-        err = dx - dy
-        while True:
-            self.draw_point(x1, y1, px_map)
-            if x1 == x2 and y1 == y2:
-                break
-            e2 = 2 * err
-            if e2 > -dy:
-                err -= dy
-                x1 += sx
-            if e2 < dx:
-                err += dx
-                y1 += sy
+    def _fpart(self, x):
+        return x - int(x)
+
+    def _rfpart(self, x):
+        return 1 - self._fpart(x)
+
+    def putpixel(self, img: QImage, px, color, alpha=1):
+        """
+        Paints color over the background at the point xy in img.
+        Use alpha for blending. alpha=1 means a completely opaque foreground.
+        """
+        compose_color = lambda bg, fg: int(round(alpha * fg + (1 - alpha) * bg))
+        x, y = px
+        if 0 <= x < img.width() and 0 <= y < img.height():
+            r, g, b, _ = img.pixelColor(x, y).getRgb()
+            img.setPixelColor(x, y, QtGui.QColor(compose_color(r, color[0]),
+                                                 compose_color(g, color[1]),
+                                                 compose_color(b, color[2])))
+
+    def draw_line(self, img, p1, p2, color, thickness):
+        x1, y1 = p1
+        x2, y2 = p2
+        dx, dy = x2 - x1, y2 - y1
+        steep = abs(dx) < abs(dy)
+        p = lambda px, py: ((px, py), (py, px))[steep]
+
+        if steep:
+            x1, y1, x2, y2, dx, dy = y1, x1, y2, x2, dy, dx
+        if x2 < x1:
+            x1, x2, y1, y2 = x2, x1, y2, y1
+
+        grad = dy / dx
+        intery = y1 + self._rfpart(x1) * grad
+
+        def draw_endpoint(pt):
+            x, y = pt
+            xend = round(x)
+            yend = y + grad * (xend - x)
+            xgap = self._rfpart(x + 0.5)
+            px, py = int(xend), int(yend)
+            self.putpixel(img, p(px, py), color, self._rfpart(yend) * xgap)
+            self.putpixel(img, p(px, py + 1), color, self._fpart(yend) * xgap)
+            return px
+
+        xstart = draw_endpoint(p(*p1)) + 1
+        xend = draw_endpoint(p(*p2))
+
+        for x in range(xstart, xend + 1):
+            for dx in range(thickness + 1):
+                for dy in range(thickness + 1):
+                    if 0 <= x - dx < img.width() and 0 <= intery - dy < img.height():
+                        self.putpixel(img, p(x - dx, int(intery) - dy), color, self._rfpart(intery))
+                        self.putpixel(img, p(x - dx, int(intery) - dy + 1), color, self._fpart(intery))
+            intery += grad
 
     def draw_point(
             self,
@@ -108,18 +147,30 @@ class PicturePreviewWidget(QWidget):
         painter = QtGui.QPainter(px_map)
         for i in range(
                 0,
-                self.pnm_data.width * self.pnm_data.height * self.pnm_data.bytes_per_pixel,
-                self.pnm_data.bytes_per_pixel,
+                self.pnm_data.width * self.pnm_data.height * self.pnm_data.bytes_per_px,
+                self.pnm_data.bytes_per_px,
         ):
-
             painter.setPen(QtGui.QColor(255, 255, 255))
             painter.drawPoint(
-                i // self.pnm_data.bytes_per_pixel % self.pnm_data.width,
-                i // self.pnm_data.bytes_per_pixel // self.pnm_data.width
+                i // self.pnm_data.bytes_per_px % self.pnm_data.width,
+                i // self.pnm_data.bytes_per_px // self.pnm_data.width
             )
         painter.end()
         self.preview_label.setPixmap(px_map)
-        self.Bresenham(px_map, 0, 0, 33, 100)
+
+    def mousePressEvent(self, a0: QtGui.QMouseEvent) -> None:
+        self.draw_pixels.append((a0.pos().x(), a0.pos().y()))
+        img = self.preview_label.pixmap().toImage()
+        if len(self.draw_pixels) == 2:
+            self.draw_line(
+                img,
+                self.draw_pixels[0],
+                self.draw_pixels[1],
+                (0, 0, 0),
+                7,
+            )
+            self.draw_pixels = []
+            self.preview_label.setPixmap(QtGui.QPixmap.fromImage(img))
 
 
 class AssignGammaWidget(QWidget):
