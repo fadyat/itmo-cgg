@@ -10,7 +10,7 @@ from PyQt6.QtWidgets import (
     QFileDialog,
     QLineEdit,
     QPushButton,
-    QVBoxLayout,
+    QVBoxLayout, QColorDialog,
 )
 
 from src.files.pnm import PnmIO
@@ -64,6 +64,39 @@ class PicturePreviewWidget(QWidget):
         self.preview_layout.addWidget(self.preview_label)
         self.setLayout(self.preview_layout)
         self.preview_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.colorPalette = QtGui.QPalette()
+        self.colorPalette.setColor(QtGui.QPalette.ColorRole.WindowText, QtGui.QColor(0, 0, 0))
+        self.colorPalette_button = QPushButton("Color")
+        self.preview_layout.addWidget(self.colorPalette_button)
+        self.colorPalette_button.clicked.connect(self.chooseColor)
+        self.clear_button = QPushButton("Clear")
+        self.preview_layout.addWidget(self.clear_button)
+        self.clear_button.clicked.connect(self.clear)
+        self.current_color = (0, 0, 0)
+
+    def clear(self):
+        px_map = QtGui.QPixmap(QSize(self.pnm_data.width, self.pnm_data.height))
+        painter = QtGui.QPainter(px_map)
+        for i in range(
+                0,
+                self.pnm_data.width * self.pnm_data.height * self.pnm_data.bytes_per_px,
+                self.pnm_data.bytes_per_px,
+        ):
+            painter.setPen(QtGui.QColor(255, 255, 255))
+            painter.drawPoint(
+                i // self.pnm_data.bytes_per_px % self.pnm_data.width,
+                i // self.pnm_data.bytes_per_px // self.pnm_data.width
+            )
+        painter.end()
+        self.preview_label.setPixmap(px_map)
+
+    def chooseColor(self):
+        color = QColorDialog.getColor()
+        self.colorPalette.setColor(QtGui.QPalette.ColorRole.WindowText, color)
+        self.colorPalette_button.setPalette(self.colorPalette)
+        self.colorPalette_button.setAutoFillBackground(True)
+        self.colorPalette_button.update()
+        self.current_color = self.colorPalette.color(QtGui.QPalette.ColorRole.WindowText).getRgb()
 
     def _fpart(self, x):
         return x - int(x)
@@ -72,10 +105,6 @@ class PicturePreviewWidget(QWidget):
         return 1 - self._fpart(x)
 
     def putpixel(self, img: QImage, px, color, alpha=1):
-        """
-        Paints color over the background at the point xy in img.
-        Use alpha for blending. alpha=1 means a completely opaque foreground.
-        """
         compose_color = lambda bg, fg: int(round(alpha * fg + (1 - alpha) * bg))
         x, y = px
         if 0 <= x < img.width() and 0 <= y < img.height():
@@ -143,20 +172,7 @@ class PicturePreviewWidget(QWidget):
             PnmFileErrorMessage(str(e), self, logs).show()
             return
 
-        px_map = QtGui.QPixmap(QSize(self.pnm_data.width, self.pnm_data.height))
-        painter = QtGui.QPainter(px_map)
-        for i in range(
-                0,
-                self.pnm_data.width * self.pnm_data.height * self.pnm_data.bytes_per_px,
-                self.pnm_data.bytes_per_px,
-        ):
-            painter.setPen(QtGui.QColor(255, 255, 255))
-            painter.drawPoint(
-                i // self.pnm_data.bytes_per_px % self.pnm_data.width,
-                i // self.pnm_data.bytes_per_px // self.pnm_data.width
-            )
-        painter.end()
-        self.preview_label.setPixmap(px_map)
+        self.clear()
 
     def mousePressEvent(self, a0: QtGui.QMouseEvent) -> None:
         self.draw_pixels.append((a0.pos().x(), a0.pos().y()))
@@ -166,8 +182,8 @@ class PicturePreviewWidget(QWidget):
                 img,
                 self.draw_pixels[0],
                 self.draw_pixels[1],
-                (0, 0, 0),
-                7,
+                self.current_color[0:3],
+                5,
             )
             self.draw_pixels = []
             self.preview_label.setPixmap(QtGui.QPixmap.fromImage(img))
