@@ -10,19 +10,26 @@ def lanczos_scaling(
 ):
     x_ratio, y_ratio = img.width / new_width, img.height / new_height
 
-    x_scaled = []
-    for i in range(0, img.get_size(), img.width):
-        row_values = img.content[i: i + img.width]
-        for j in range(new_width):
-            scaled = lanczos_point(j * x_ratio, row_values)
-            x_scaled.append(scaled)
+    x_scaled = [0] * new_width * img.height * img.bytes_per_px
+    for row_idx in range(0, img.get_size(), img.width * img.bytes_per_px):
+        for channel in range(img.bytes_per_px):
+            begin, end = row_idx + channel, row_idx + img.width * img.bytes_per_px
+            channel_row_values = img.content[begin: end: img.bytes_per_px]
+            channel_values = [
+                lanczos_point(j * x_ratio, channel_row_values)
+                for j in range(new_width)
+            ]
+            for i, val in enumerate(channel_values):
+                new_row_idx = row_idx // img.width * new_width
+                x_scaled[new_row_idx + i * img.bytes_per_px + channel] = val
 
-    new_content = [0] * new_height * new_width
-    for col_idx in range(new_width):
-        column_values = x_scaled[col_idx::new_width]
-        for j in range(new_height):
-            scaled = lanczos_point(j * y_ratio, column_values)
-            new_content[col_idx + j * new_width] = scaled
+    new_content = [0] * new_height * new_width * img.bytes_per_px
+    for col_idx in range(0, new_width * img.bytes_per_px, img.bytes_per_px):
+        for channel in range(img.bytes_per_px):
+            channel_column_values = x_scaled[col_idx + channel::new_width * img.bytes_per_px]
+            for row_idx in range(new_height):
+                scaled = lanczos_point(row_idx * y_ratio, channel_column_values)
+                new_content[col_idx + row_idx * new_width * img.bytes_per_px + channel] = scaled
 
     return PnmFileUI(
         pnm_format=img.pnm_format,
@@ -69,9 +76,18 @@ def clamp(
 
 
 if __name__ == '__main__':
-    lanczos_scaling(
+    f = lanczos_scaling(
         PnmFileUI(
-            width=3, height=3, bytes_per_px=1, pnm_format=None,
-            content=[6, 2, 4, 1, 9, 5, 3, 0, 7], max_color=255
+            width=3, height=2, bytes_per_px=3, pnm_format=None,
+            content=[6, 2, 4, 1, 9, 5, 3, 0, 7, 6, 2, 4, 1, 9, 5, 3, 0, 7], max_color=255
         ), 4, 2,
     )
+    print(f)
+    # f = PnmFileUI(
+    #     width=3, height=2, bytes_per_px=3, pnm_format=None,
+    #     content=[6, 2, 4, 1, 9, 5, 3, 0, 7, 6, 2, 4, 4, 9, 5, 3, 0, 7], max_color=255
+    # )
+    #
+    # for i in range(0, f.get_size(), f.width * f.bytes_per_px):
+    #     for channel in range(f.bytes_per_px):
+    #         print(f.content[i + channel:i + f.width * f.bytes_per_px:f.bytes_per_px])
