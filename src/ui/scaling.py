@@ -46,6 +46,21 @@ class ScalingWidget(QWidget):
         self.scaling_algorithm_layout.addWidget(self.scaling_algorithm_selector)
         self.main_layout.addLayout(self.scaling_algorithm_layout)
 
+        self.displacement_layout = QHBoxLayout()
+        self.displacement_layout.addWidget(create_beauty_label('Displacement:'))
+        self.displacement_input_x = QLineEdit()
+        self.displacement_input_x.setStyle(QStyleFactory.create('Fusion'))
+        self.displacement_input_x.setText('0')
+        self.displacement_layout.addStretch()
+        self.displacement_layout.addWidget(self.displacement_input_x)
+
+        self.displacement_input_y = QLineEdit()
+        self.displacement_input_y.setStyle(QStyleFactory.create('Fusion'))
+        self.displacement_input_y.setText('0')
+        self.displacement_layout.addStretch()
+        self.displacement_layout.addWidget(self.displacement_input_y)
+        self.main_layout.addLayout(self.displacement_layout)
+
         self.apply_scaling_button = QPushButton('Apply')
         self.apply_scaling_button.clicked.connect(self.apply_scaling)
         self.apply_scaling_button.setStyle(QStyleFactory.create('Fusion'))
@@ -96,3 +111,25 @@ class ScalingWidget(QWidget):
 
     def set_height(self, height: int):
         self.height_input.setText(str(height))
+
+    def get_displacement_x(self) -> int:
+        try:
+            displacement_x = int(self.displacement_input_x.text())
+        except ValueError:
+            displacement_x = 0
+
+        return displacement_x
+
+    def get_displacement_y(self) -> int:
+        try:
+            displacement_y = int(self.displacement_input_y.text())
+        except ValueError:
+            displacement_y = 0
+
+        return displacement_y
+
+    def set_displacement_x(self, displacement_x: int):
+        self.displacement_input_x.setText(str(displacement_x))
+
+    def set_displacement_y(self, displacement_y: int):
+        self.displacement_input_y.setText(str(displacement_y))

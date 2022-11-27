@@ -73,21 +73,3 @@ def clamp(
     right_limit: int,
 ) -> int:
     return max(0, min(x, right_limit))
-
-
-if __name__ == '__main__':
-    f = lanczos_scaling(
-        PnmFileUI(
-            width=3, height=2, bytes_per_px=3, pnm_format=None,
-            content=[6, 2, 4, 1, 9, 5, 3, 0, 7, 6, 2, 4, 1, 9, 5, 3, 0, 7], max_color=255
-        ), 4, 2,
-    )
-    print(f)
-    # f = PnmFileUI(
-    #     width=3, height=2, bytes_per_px=3, pnm_format=None,
-    #     content=[6, 2, 4, 1, 9, 5, 3, 0, 7, 6, 2, 4, 4, 9, 5, 3, 0, 7], max_color=255
-    # )
-    #
-    # for i in range(0, f.get_size(), f.width * f.bytes_per_px):
-    #     for channel in range(f.bytes_per_px):
-    #         print(f.content[i + channel:i + f.width * f.bytes_per_px:f.bytes_per_px])

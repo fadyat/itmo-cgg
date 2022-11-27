@@ -172,6 +172,8 @@ class ApplicationWindow(QMainWindow):
 
         self.scaling_widget.set_width(self.preview.prev_correct_image.width)
         self.scaling_widget.set_height(self.preview.prev_correct_image.height)
+        self.scaling_widget.set_displacement_x(0)
+        self.scaling_widget.set_displacement_y(0)
 
     def change_channel(self):
         disabled_channels = self.get_disabled_channels()
@@ -189,6 +191,8 @@ class ApplicationWindow(QMainWindow):
             self.scaling_widget.get_width(),
             self.scaling_widget.get_height(),
             self.scaling_widget.get_scaling_algorithm(),
+            self.scaling_widget.get_displacement_x(),
+            self.scaling_widget.get_displacement_y(),
         ):
             self.disabled_channels = disabled_channels
 
@@ -209,6 +213,8 @@ class ApplicationWindow(QMainWindow):
             self.scaling_widget.get_width(),
             self.scaling_widget.get_height(),
             self.scaling_widget.get_scaling_algorithm(),
+            self.scaling_widget.get_displacement_x(),
+            self.scaling_widget.get_displacement_y(),
         ):
             self.picture_color_format = ColorFormat[picture_color_format]
             self.new_color_format = ColorFormat[new_color_format]
@@ -230,6 +236,8 @@ class ApplicationWindow(QMainWindow):
             self.scaling_widget.get_width(),
             self.scaling_widget.get_height(),
             self.scaling_widget.get_scaling_algorithm(),
+            self.scaling_widget.get_displacement_x(),
+            self.scaling_widget.get_displacement_y(),
         ):
             self.dithering_algo = DitheringAlgo[dithering_algo]
             self.dithering_bits = dithering_bits
@@ -263,6 +271,8 @@ class ApplicationWindow(QMainWindow):
             self.scaling_widget.get_width(),
             self.scaling_widget.get_height(),
             self.scaling_widget.get_scaling_algorithm(),
+            self.scaling_widget.get_displacement_x(),
+            self.scaling_widget.get_displacement_y(),
         ):
             if gamma_option == GammaOption.CONVERT:
                 self.edit_gamma_widget.set_from_gamma(self.edit_gamma_widget.get_to_gamma())
@@ -297,6 +307,8 @@ class ApplicationWindow(QMainWindow):
             new_width,
             new_height,
             algorithm,
+            self.scaling_widget.get_displacement_x(),
+            self.scaling_widget.get_displacement_y(),
         ):
             self.scaling_widget.set_width(new_width)
             self.scaling_widget.set_height(new_height)

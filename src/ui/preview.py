@@ -14,6 +14,7 @@ from src.utils.channels import try_delete_superfluous_channels
 from src.utils.converter import ColorFormat, ColorConverter
 from src.utils.dithering.resolver import DitheringAlgo, apply_dithering
 from src.utils.gamma import GammaOption, resolve_gamma
+from src.utils.scaling.displacement import displace
 from src.utils.scaling.resolver import ScalingAlgo, apply_scaling
 
 
@@ -47,6 +48,8 @@ class FilePreview(QWidget):
         new_width: int = None,
         new_height: int = None,
         scaling_algo: ScalingAlgo = ScalingAlgo.NONE,
+        x_displacement: int = 0,
+        y_displacement: int = 0,
     ) -> bool:
         try:
             with PnmIO(file_name) as r:
@@ -62,6 +65,8 @@ class FilePreview(QWidget):
             new_height = img.height
 
         img = apply_scaling(scaling_algo, img, new_width, new_height)
+        displace(img, x_displacement, y_displacement)
+
         px_map = QtGui.QPixmap(QSize(img.width, img.height))
         painter = QtGui.QPainter(px_map)
         converter = ColorConverter(new_color_format)
