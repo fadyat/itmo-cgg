@@ -14,14 +14,14 @@ def lanczos_scaling(
     for i in range(0, img.get_size(), img.width):
         row_values = img.content[i: i + img.width]
         for j in range(new_width):
-            scaled = lanczos_point((j + .5) * x_ratio - .5, row_values)
+            scaled = lanczos_point(j * x_ratio, row_values)
             x_scaled.append(scaled)
 
     new_content = [0] * new_height * new_width
     for col_idx in range(new_width):
         column_values = x_scaled[col_idx::new_width]
         for j in range(new_height):
-            scaled = lanczos_point((j + .5) * y_ratio - .5, column_values)
+            scaled = lanczos_point(j * y_ratio, column_values)
             new_content[col_idx + j * new_width] = scaled
 
     return PnmFileUI(
@@ -37,7 +37,7 @@ def lanczos_scaling(
 def lanczos_point(
     x: float,
     values: list[float],
-    a: int = 2,
+    a: int = 3,
 ):
     lower_bound = math.floor(x) - a + 1
     upper_bound = math.floor(x) + a
