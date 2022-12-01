@@ -18,36 +18,6 @@ from src.typedef import logs
 from src.ui.errors import PnmFileErrorMessage
 
 
-class AntiAliasingWidget(QWidget):
-
-    def __init__(
-            self,
-            preview_widget: 'PicturePreviewWidget',
-    ):
-        super().__init__()
-        self.preview_widget = preview_widget
-        self.gamma_input = QLineEdit()
-        self.gamma_input.setText("1.0")
-
-        self.select_file_layout = QHBoxLayout()
-        self.select_file_button = QPushButton("Select file")
-        self.select_file_button.clicked.connect(self.select_file)
-        self.selected_file_label = QLabel(self.selected_file)
-        self.select_file_layout.addWidget(self.select_file_button)
-        self.select_file_layout.addWidget(self.selected_file_label)
-
-        self.form_layout = QVBoxLayout()
-        self.form_layout.addLayout(self.select_file_layout)
-
-        self.setLayout(self.form_layout)
-        self.form_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-    def select_file(self):
-        self.selected_file = QFileDialog.getOpenFileName(self, "Select file", "", "")[0]
-        self.selected_file_label.setText(self.selected_file.split("/")[-1])
-        self.preview_widget.render_picture(self.selected_file)
-
-
 class PicturePreviewWidget(QWidget):
 
     def __init__(
@@ -59,29 +29,64 @@ class PicturePreviewWidget(QWidget):
         self.preview_layout = QHBoxLayout()
         self.preview_frame = QFrame()
         self.preview_layout.addWidget(self.preview_frame)
-        self.preview_label = QLabel("Preview")
+        self.preview_label = QLabel("")
         self.preview_layout.addWidget(self.preview_label)
         self.setLayout(self.preview_layout)
         self.preview_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.select_file_layout = QHBoxLayout()
+        self.select_file_button = QPushButton("Select file")
+        self.select_file_button.clicked.connect(self.select_file)
+        self.selected_file = ""
+        self.selected_file_label = QLabel(self.selected_file)
+        self.select_file_layout.addWidget(self.select_file_button)
+        self.select_file_layout.addWidget(self.selected_file_label)
+        self.select_file_button.setStyleSheet("QPushButton {padding: 5px; font-size: 30px}")
+        self.preview_layout.addLayout(self.select_file_layout)
+        self.preview_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.colorPalette = QtGui.QPalette()
         self.colorPalette.setColor(QtGui.QPalette.ColorRole.WindowText, QtGui.QColor(0, 0, 0))
         self.colorPalette_button = QPushButton("Color")
+        self.colorPalette_button.setStyleSheet("QPushButton { padding: 5px; font-size: 30px;}")
         self.preview_layout.addWidget(self.colorPalette_button)
         self.colorPalette_button.clicked.connect(self.chooseColor)
         self.current_color = (0, 0, 0)
         self.clear_button = QPushButton("Clear")
+        self.clear_button.setStyleSheet("QPushButton { padding: 5px; font-size: 30px;}")
         self.preview_layout.addWidget(self.clear_button)
         self.clear_button.clicked.connect(self.clear)
         self.thickness_input = QLineEdit()
+        self.thickness_input.setStyleSheet("QLineEdit { padding: 5px; font-size: 25px;}")
         self.thickness_input.setText("1")
         self.preview_layout.addWidget(self.thickness_input)
         self.current_thickness = 1
         self.thickness_input.textChanged.connect(self.change_thickness)
         self.transparency_input = QLineEdit()
         self.transparency_input.setText("1")
+        self.transparency_input.setStyleSheet("QLineEdit { padding: 5px; font-size: 25px;}")
         self.preview_layout.addWidget(self.transparency_input)
         self.current_transparency = 1
         self.transparency_input.textChanged.connect(self.change_transparency)
+        self.gamma_input = QLineEdit()
+        self.gamma_input.setText("1.0")
+
+
+
+        self.form_layout = QVBoxLayout()
+        self.form_layout.addLayout(self.select_file_layout)
+
+        self.setLayout(self.form_layout)
+        self.form_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.gamma_input = QLineEdit()
+        self.gamma_input.setText("1.0")
+
+        self.setLayout(self.form_layout)
+        self.form_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+    def select_file(self):
+        self.selected_file = QFileDialog.getOpenFileName(self, "Select file", "", "")[0]
+        self.render_picture(self.selected_file)
+
 
     def change_transparency(self):
         if self.transparency_input.text().isdigit():
@@ -206,7 +211,7 @@ class PicturePreviewWidget(QWidget):
             self.preview_label.setPixmap(QtGui.QPixmap.fromImage(img))
 
 
-class AssignGammaWidget(QWidget):
+class AntiAliasingWidgetMain(QWidget):
 
     def __init__(
             self,
@@ -215,10 +220,6 @@ class AssignGammaWidget(QWidget):
         self.global_hori_layout = QGridLayout()
         self.picture_preview_widget = PicturePreviewWidget()
         self.global_hori_layout.addWidget(self.picture_preview_widget, 1, 0)
-
-        self.form_gamma_widget = AntiAliasingWidget(self.picture_preview_widget)
-        self.global_hori_layout.addWidget(self.form_gamma_widget, 0, 0)
-
         self.setLayout(self.global_hori_layout)
         self.global_hori_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.setGeometry(0, 0, 800, 600)
@@ -229,6 +230,6 @@ if __name__ == '__main__':
     from PyQt6.QtWidgets import QApplication
 
     app = QApplication(sys.argv)
-    w = AssignGammaWidget()
+    w = AntiAliasingWidgetMain()
     w.show()
     sys.exit(app.exec())
