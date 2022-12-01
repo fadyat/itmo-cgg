@@ -19,7 +19,6 @@ from src.ui.errors import PnmFileErrorMessage
 
 
 class AntiAliasingWidget(QWidget):
-    selected_file: str = r"C:\Users\sergo\PycharmProjects\cg22-project-NeedForGirl3\docs\shrek.pnm"  # todo: remove this
 
     def __init__(
             self,
@@ -79,14 +78,14 @@ class PicturePreviewWidget(QWidget):
         self.current_thickness = 1
         self.thickness_input.textChanged.connect(self.change_thickness)
         self.transparency_input = QLineEdit()
-        self.transparency_input.setText("1.0")
+        self.transparency_input.setText("1")
         self.preview_layout.addWidget(self.transparency_input)
-        self.current_transparency = 1.0
+        self.current_transparency = 1
         self.transparency_input.textChanged.connect(self.change_transparency)
 
     def change_transparency(self):
         if self.transparency_input.text().isdigit():
-            self.current_transparency = float(self.transparency_input.text())
+            self.current_transparency = int(self.transparency_input.text())
 
     def change_thickness(self):
         if self.thickness_input.text().isdigit():
@@ -130,7 +129,7 @@ class PicturePreviewWidget(QWidget):
             img.setPixelColor(x, y, QtGui.QColor(compose_color(r, color[0]),
                                                  compose_color(g, color[1]),
                                                  compose_color(b, color[2]),
-                                                 30))
+                                                 self.current_transparency))
 
     def draw_line(self, img, p1, p2, color):
         x1, y1 = p1
@@ -195,7 +194,7 @@ class PicturePreviewWidget(QWidget):
 
     def mousePressEvent(self, a0: QtGui.QMouseEvent) -> None:
         self.draw_pixels.append((a0.pos().x(), a0.pos().y()))
-        img = self.preview_label.pixmap().toImage()
+        img = self.preview_label.pixmap().toImage().convertToFormat(QImage.Format.Format_ARGB32)
         if len(self.draw_pixels) == 2:
             self.draw_line(
                 img,
