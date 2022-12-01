@@ -8,7 +8,7 @@ from src.validators.pnm import (
     validate_width_and_height,
     validate_pnm_format,
     validate_file,
-    validate_image_content,
+    validate_image_content, validate_color_value,
 )
 
 
@@ -161,8 +161,8 @@ class PnmIO:
         max_color_value: int,
     ):
         for color_code in image_content:
-            # validate_color_value(color_code, max_color_value) # deprecated
-            color_code = 0 if color_code < 0 else color_code and 255 if color_code > 255 else color_code
+            validate_color_value(color_code, max_color_value)
+            color_code = max(0, min(color_code, max_color_value))
             self.__file.write(color_code.to_bytes(1, 'big'))  # type: ignore
 
     def __write_line(
