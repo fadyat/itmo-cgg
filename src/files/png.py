@@ -1,80 +1,10 @@
-import enum
 import typing
 
-
-class ChunkType(enum.Enum):
-    IHDR = 0
-    IDAT = 2
-    IEND = 3
-
-
-class Chunk:
-    LENGTH_BYTES_COUNT, TYPE_BYTES_COUNT, CRC_BYTES_COUNT = 4, 4, 4
-
-    def __init__(
-        self,
-        length: int,
-        ctype: str,
-        data: typing.List[int],
-        crc: str,
-    ):
-        self.length = length
-        self.ctype = ChunkType[ctype]
-        self.data = data
-        self.crc = crc
-
-    def __repr__(self) -> str:
-        return (
-            f"Chunk(length={self.length}, ctype={self.ctype}, "
-            f"data={len(self.data)}, crc={self.crc})"
-        )
-
-
-class IHDRChunk(Chunk):
-    WIDTH_BYTES_COUNT, HEIGHT_BYTES_COUNT = 4, 4
-    BIT_DEPTH_BYTES_COUNT, COLOR_TYPE_BYTES_COUNT, COMPRESSION_METHOD_BYTES_COUNT = 1, 1, 1
-    FILTER_METHOD_BYTES_COUNT, INTERLACE_METHOD_BYTES_COUNT = 1, 1
-
-    def __init__(
-        self,
-        length: int,
-        ctype: str,
-        data: typing.List[int],
-        crc: str,
-    ):
-        super().__init__(length, ctype, data, crc)
-
-        left, right = 0, self.WIDTH_BYTES_COUNT
-        self.width = get_chunk_length(data[left:right])
-
-        left, right = right, right + self.HEIGHT_BYTES_COUNT
-        self.height = get_chunk_length(data[left:right])
-
-        left, right = right, right + self.BIT_DEPTH_BYTES_COUNT
-        self.bit_depth = get_chunk_length(data[left:right])
-
-        left, right = right, right + self.COLOR_TYPE_BYTES_COUNT
-        self.color_type = get_chunk_length(data[left:right])
-
-        left, right = right, right + self.COMPRESSION_METHOD_BYTES_COUNT
-        self.compression_method = get_chunk_length(data[left:right])
-
-        left, right = right, right + self.FILTER_METHOD_BYTES_COUNT
-        self.filter_method = get_chunk_length(data[left:right])
-
-        left, right = right, right + self.INTERLACE_METHOD_BYTES_COUNT
-        self.interlace_method = get_chunk_length(data[left:right])
-
-    def __repr__(self) -> str:
-        return (
-            f"IHDRChunk(length={self.length}, ctype={self.ctype}, "
-            f"data={len(self.data)}, crc={self.crc}, "
-            f"width={self.width}, height={self.height}, "
-            f"bit_depth={self.bit_depth}, color_type={self.color_type}, "
-            f"compression_method={self.compression_method}, "
-            f"filter_method={self.filter_method}, "
-            f"interlace_method={self.interlace_method})"
-        )
+from src.entities.png import Chunk, ChunkType, IHDRChunk, PngFileUI
+from src.errors.png import (
+    PngError,
+)
+from src.utils.png import get_chunk_length
 
 
 class PngIO:
@@ -96,27 +26,33 @@ class PngIO:
         self.__file.close()
         self.__file = None
 
-    def read_for_ui(self) -> typing.List[Chunk]:
+    def read_for_ui(self) -> PngFileUI:
         """ https://docs.fileformat.com/image/png/ """
 
         _ = self.__read_header()
-        chunks = []
+        critical_chunks, ancillary_chunks = [], []
         while True:
             chunk = self.__read_chunk()
             if chunk.ctype == ChunkType.IHDR:
-                chunks.append(IHDRChunk(
+                chunk = IHDRChunk(
                     length=chunk.length,
                     ctype=chunk.ctype.name,
                     data=chunk.data,
                     crc=chunk.crc,
-                ))
-                continue
+                )
 
-            chunks.append(chunk)
+            if chunk.is_critical():
+                critical_chunks.append(chunk)
+            else:
+                ancillary_chunks.append(chunk)
+
             if chunk.ctype == ChunkType.IEND:
                 break
 
-        return chunks
+        return PngFileUI(
+            critical_chunks=critical_chunks,
+            ancillary_chunks=ancillary_chunks,
+        )
 
     def __read_header(
         self,
@@ -154,20 +90,11 @@ class PngIO:
         )
 
 
-def get_chunk_length(
-    bts: typing.List[int],
-) -> int:
-    length, power = 0, 0
-    for x in reversed(bts):
-        length += int(hex(x)[2:], 16) * (256 ** power)
-        power += 1
-
-    return length
-
-
 if __name__ == '__main__':
     with PngIO('../../docs/ai.png') as png:
-        chunks = png.read_for_ui()
-
-    for chunk in chunks:
-        print(chunk)
+        try:
+            pngui = png.read_for_ui()
+        except PngError as e:
+            print(e)
+        else:
+            print(pngui)
