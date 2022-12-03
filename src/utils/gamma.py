@@ -38,7 +38,7 @@ def to_linear(
     px: list[float],
     gamma: float,
 ) -> list[float]:
-    if gamma == 2.4:
+    if gamma == 0:
         return srgb_to_linear(px)
 
     if gamma == 1:
@@ -54,7 +54,7 @@ def from_linear(
     px: list[float],
     gamma: float,
 ) -> list[float]:
-    if gamma == 2.4:
+    if gamma == 0:
         return linear_to_srgb(px)
 
     if gamma == 1:
