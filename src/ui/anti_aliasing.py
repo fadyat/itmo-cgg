@@ -15,7 +15,7 @@ from PyQt6.QtWidgets import (
 
 from src.files.pnm import PnmIO
 from src.typedef import logs
-from src.ui.errors import PnmFileErrorMessage
+from src.ui.errors import FileErrorMessage
 
 
 class PicturePreviewWidget(QWidget):
@@ -192,7 +192,7 @@ class PicturePreviewWidget(QWidget):
             with PnmIO(selected_file) as pnm:
                 self.pnm_data = pnm.read_for_ui()
         except Exception as e:
-            PnmFileErrorMessage(str(e), self, logs).show()
+            FileErrorMessage(str(e), self, logs).show()
             return
 
         self.clear()

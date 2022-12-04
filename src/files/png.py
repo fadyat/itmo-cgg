@@ -30,28 +30,40 @@ class PngIO:
         """ https://docs.fileformat.com/image/png/ """
 
         _ = self.__read_header()
-        critical_chunks, ancillary_chunks = [], []
+        ihdr_chunk, iend_chunk = None, None
+        idat_chunks, ancillary_chunks = [], []
         while True:
             chunk = self.__read_chunk()
             if chunk.ctype == ChunkType.IHDR:
-                chunk = IHDRChunk(
+                if ihdr_chunk is not None:
+                    raise PngError('Only one IHDR chunk is allowed')
+
+                ihdr_chunk = IHDRChunk(
                     length=chunk.length,
                     ctype=chunk.ctype.name,
                     data=chunk.data,
                     crc=chunk.crc,
                 )
-
-            if chunk.is_critical():
-                critical_chunks.append(chunk)
-            else:
-                ancillary_chunks.append(chunk)
+                continue
 
             if chunk.ctype == ChunkType.IEND:
+                if iend_chunk is not None:
+                    raise PngError('Only one IEND chunk is allowed')
+
+                iend_chunk = chunk
                 break
 
+            if chunk.ctype == ChunkType.IDAT:
+                idat_chunks.append(chunk)
+                continue
+
+            ancillary_chunks.append(chunk)
+
         return PngFileUI(
-            critical_chunks=critical_chunks,
+            ihdr_chunk=ihdr_chunk,
+            idat_chunks=idat_chunks,
             ancillary_chunks=ancillary_chunks,
+            iend_chunk=iend_chunk,
         )
 
     def __read_header(
@@ -91,10 +103,11 @@ class PngIO:
 
 
 if __name__ == '__main__':
-    with PngIO('../../docs/ai.png') as png:
+    with PngIO('../../docs/sad3.png') as png:
         try:
             pngui = png.read_for_ui()
         except PngError as e:
             print(e)
         else:
             print(pngui)
+            print(pngui.ancillary_chunks)

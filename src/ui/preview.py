@@ -9,7 +9,7 @@ from PyQt6.QtWidgets import (
 from src.entities.pnm import PnmFileUI
 from src.files.pnm import PnmIO
 from src.typedef import logs
-from src.ui.errors import PnmFileErrorMessage
+from src.ui.errors import FileErrorMessage
 from src.utils.channels import try_delete_superfluous_channels
 from src.utils.converter import ColorFormat, ColorConverter
 from src.utils.dithering.resolver import DitheringAlgo, apply_dithering
@@ -55,7 +55,7 @@ class FilePreview(QWidget):
             with PnmIO(file_name) as r:
                 img = r.read_for_ui()
         except Exception as e:
-            PnmFileErrorMessage(str(e), self, logs).show()
+            FileErrorMessage(str(e), self, logs).show()
             return False
 
         if new_width is None:
@@ -102,7 +102,7 @@ class FilePreview(QWidget):
         disabled_channels: list[bool],
     ):
         if not self.prev_correct_image:
-            PnmFileErrorMessage("No image to save", self, logs).show()
+            FileErrorMessage("No image to save", self, logs).show()
             return
 
         opt_content = try_delete_superfluous_channels(
