@@ -11,7 +11,7 @@ from src.ui.errors import FileErrorMessage
 
 
 class PngViewWidget(QMainWindow):
-    file_name: str = '../../docs/sad3.png'
+    file_name: str = '../../docs/sad1.png'
 
     def __init__(self):
         super().__init__()
@@ -48,7 +48,8 @@ class PngViewWidget(QMainWindow):
             FileErrorMessage(str(e), self, logs).show()
             return
 
-        self.png_label.setPixmap(QPixmap(png.to_qimage()))
+        print(png)
+        self.png_label.setPixmap(png.to_qpixmap())
 
 
 if __name__ == '__main__':

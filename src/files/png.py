@@ -1,6 +1,6 @@
 import typing
 
-from src.entities.png import Chunk, ChunkType, IHDRChunk, PngFileUI
+from src.entities.png import Chunk, ChunkType, IHDRChunk, PngFileUI, GammaChunk
 from src.errors.png import (
     PngError,
 )
@@ -44,6 +44,15 @@ class PngIO:
                     data=chunk.data,
                     crc=chunk.crc,
                 )
+                continue
+
+            if chunk.ctype == ChunkType.gAMA:
+                ancillary_chunks.append(GammaChunk(
+                    length=chunk.length,
+                    ctype=chunk.ctype.name,
+                    data=chunk.data,
+                    crc=chunk.crc,
+                ))
                 continue
 
             if chunk.ctype == ChunkType.IEND:

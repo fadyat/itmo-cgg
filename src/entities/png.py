@@ -1,8 +1,8 @@
 import dataclasses
 import enum
 import typing
-
 import zlib
+
 from PyQt6 import QtGui
 
 from src.errors.png import (
@@ -134,6 +134,25 @@ class IHDRChunk(Chunk):
             raise PngError('Filtering is not supported')
 
 
+class GammaChunk(Chunk):
+
+    def __init__(
+        self,
+        length: int,
+        ctype: str,
+        data: typing.List[int],
+        crc: str,
+    ):
+        super().__init__(length, ctype, data, crc)
+
+        # The value is encoded as a 4-byte unsigned integer, representing gamma times 100000.
+        # For example, a gamma of 1/2.2 would be stored as 45455.
+        self.gamma = get_chunk_length(data)
+
+    def get_gamma(self) -> float:
+        return self.gamma / 100000
+
+
 @dataclasses.dataclass
 class PngFileUI:
 
@@ -157,73 +176,107 @@ class PngFileUI:
             f"\n\tancillary_chunks={len(self.ancillary_chunks)}\n)"
         )
 
-    def to_qimage(self) -> QtGui.QImage:
-        image = QtGui.QImage(
-            self.ihdr_chunk.width,
-            self.ihdr_chunk.height,
-            QtGui.QImage.Format.Format_RGB888,
-        )
+    def to_qpixmap(self) -> QtGui.QPixmap:
+        painter = QtGui.QPainter()
+        pixmap = QtGui.QPixmap(self.ihdr_chunk.width, self.ihdr_chunk.height)
 
         decompressed_data = zlib.decompress(b''.join([
-            bytes(chunk.data)
-            for chunk in self.idat_chunks
+            bytes(chunk.data) for chunk in self.idat_chunks
         ]))
 
-        recon = []
-        bpx = 3
-        stride = self.ihdr_chunk.width * bpx
+        # todo: support 3-rd color type
+        bpx = 1
+        if self.ihdr_chunk.color_type == 2:
+            bpx = 3
 
-        def paeth(a, b, c):
-            p = a + b - c
-            pa = abs(p - a)
-            pb = abs(p - b)
-            pc = abs(p - c)
-            if pa <= pb and pa <= pc:
-                pr = a
-            elif pb <= pc:
-                pr = b
-            else:
-                pr = c
-            return pr
+        scanline_length = self.ihdr_chunk.width * bpx
+        scanlines = [
+            (decompressed_data[i], decompressed_data[i + 1:i + scanline_length + 1])
+            for i in range(0, len(decompressed_data), scanline_length + 1)
+        ]
 
-        def recon_a(r, c):
-            return (
-                recon[r * stride + c - bpx]
-                if c >= bpx else 0
-            )
-
-        def recon_b(r, c):
-            return (
-                recon[(r - 1) * stride + c]
-                if r >= 1 else 0
-            )
-
-        def recon_c(r, c):
-            return (
-                recon[(r - 1) * stride + c - bpx]
-                if r >= 1 and c >= bpx else 0
-            )
-
-        i = 0
-        for row in range(self.ihdr_chunk.height):
-            filter_type = decompressed_data[i]
-            i += 1
-            for col in range(stride):
-                px = decompressed_data[i]
-                if filter_type == 1:
-                    px += recon_a(row, col)
-                elif filter_type == 2:
-                    px += recon_b(row, col)
-                elif filter_type == 3:
-                    px += (recon_a(row, col) + recon_b(row, col)) // 2
-                elif filter_type == 4:
-                    px += paeth(recon_a(row, col), recon_b(row, col), recon_c(row, col))
-
-                recon.append(px % 256)
-                if len(recon) % 3 == 0:
-                    image.setPixel(
-                        col // bpx, row, QtGui.qRgb(recon[-3], recon[-2], recon[-1]),
+        # todo: add gamma correction
+        reconstructed_pxs = []
+        painter.begin(pixmap)
+        for i, (filter_type, scanline) in enumerate(scanlines):
+            for j in range(0, scanline_length, bpx):
+                for k in range(bpx):
+                    add_val = apply_filter(
+                        filter_type=filter_type,
+                        reconstructed_filters=reconstructed_pxs,
+                        bpx=bpx,
+                        row=i,
+                        col=j + k,
+                        scanline_length=scanline_length,
                     )
-                i += 1
+                    px = (scanline[j + k] + add_val) % 256
+                    reconstructed_pxs.append(px)
 
-        return image
+                rgb = reconstructed_pxs[-bpx:]
+                if bpx == 1:
+                    rgb = [rgb[0], rgb[0], rgb[0]]
+
+                painter.setPen(QtGui.QColor(*rgb))
+                painter.drawPoint(j // bpx, i)
+
+        painter.end()
+
+        return pixmap
+
+
+def apply_filter(
+    filter_type: int,
+    reconstructed_filters: typing.List[int],
+    row: int,
+    col: int,
+    scanline_length: int,
+    bpx: int,
+):
+    if filter_type == 0:
+        return 0
+
+    def left():
+        return (
+            reconstructed_filters[row * scanline_length + col - bpx]
+            if col >= bpx else 0
+        )
+
+    def up():
+        return (
+            reconstructed_filters[(row - 1) * scanline_length + col]
+            if row > 0 else 0
+        )
+
+    def up_left():
+        return (
+            reconstructed_filters[(row - 1) * scanline_length + col - bpx]
+            if row > 0 and col >= bpx else 0
+        )
+
+    def avg():
+        return (left() + up()) // 2
+
+    def paeth():
+        a, b, c = left(), up(), up_left()
+        p = a + b - c
+        pa, pb, pc = abs(p - a), abs(p - b), abs(p - c)
+        if pa <= pb and pa <= pc:
+            return a
+        elif pb <= pc:
+            return b
+
+        return c
+
+    if filter_type == 1:
+        return left()
+
+    if filter_type == 2:
+        return up()
+
+    if filter_type == 3:
+        return avg()
+
+    if filter_type == 4:
+        return paeth()
+
+    raise PngError('Invalid filter type')
