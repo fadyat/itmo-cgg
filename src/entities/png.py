@@ -9,6 +9,7 @@ from src.errors.png import (
     PngBitDepthError, PngColorTypeError, PngError, PngChunkTypeError,
     PngChunkError
 )
+from src.utils.gamma import resolve_gamma, GammaOption
 from src.utils.png import get_chunk_length
 
 
@@ -150,7 +151,14 @@ class GammaChunk(Chunk):
         self.gamma = get_chunk_length(data)
 
     def get_gamma(self) -> float:
-        return self.gamma / 100000
+        return 1 / (self.gamma / 100000)
+
+    def __repr__(self):
+        return (
+            f"GammaChunk(length={self.length}, ctype={self.ctype}, "
+            f"data={len(self.data)}, crc={self.crc}, "
+            f"gamma={self.get_gamma()})"
+        )
 
 
 @dataclasses.dataclass
@@ -167,6 +175,16 @@ class PngFileUI:
         self.idat_chunks = idat_chunks
         self.iend_chunk = iend_chunk
         self.ancillary_chunks = ancillary_chunks
+        self.gamma_chunk = None
+        for c in self.ancillary_chunks:
+            if c.ctype == ChunkType.gAMA:
+                self.gamma_chunk = GammaChunk(
+                    c.length,
+                    c.ctype.name,
+                    c.data,
+                    c.crc,
+                )
+                break
 
     def __repr__(self) -> str:
         return (
@@ -195,7 +213,6 @@ class PngFileUI:
             for i in range(0, len(decompressed_data), scanline_length + 1)
         ]
 
-        # todo: add gamma correction
         reconstructed_pxs = []
         painter.begin(pixmap)
         for i, (filter_type, scanline) in enumerate(scanlines):
@@ -216,7 +233,19 @@ class PngFileUI:
                 if bpx == 1:
                     rgb = [rgb[0], rgb[0], rgb[0]]
 
-                painter.setPen(QtGui.QColor(*rgb))
+                next_gamma = 0
+                if self.gamma_chunk:
+                    next_gamma = self.gamma_chunk.get_gamma()
+
+                rgb = resolve_gamma(
+                    px=[x / 255.0 for x in rgb],
+                    prev_gamma=2.2,
+                    next_gamma=next_gamma,
+                    gamma_option=GammaOption.ASSIGN,
+                )
+                painter.setPen(
+                    QtGui.QColor(*[int(x * 255) for x in rgb])
+                )
                 painter.drawPoint(j // bpx, i)
 
         painter.end()

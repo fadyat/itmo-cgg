@@ -109,14 +109,3 @@ class PngIO:
             data=self.__read_bytes(chunk_length),
             crc=self.__read_bytes_as_hex(Chunk.CRC_BYTES_COUNT),
         )
-
-
-if __name__ == '__main__':
-    with PngIO('../../docs/sad3.png') as png:
-        try:
-            pngui = png.read_for_ui()
-        except PngError as e:
-            print(e)
-        else:
-            print(pngui)
-            print(pngui.ancillary_chunks)
