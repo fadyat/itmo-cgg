@@ -96,6 +96,9 @@ class IHDRChunk(Chunk):
 
         left, right = right, right + self.INTERLACE_METHOD_BYTES_COUNT
         self.interlace_method = get_chunk_length(data[left:right])
+
+        # todo: support other color types
+        self.bpx = 3 if self.color_type == 2 else 1
         # self.__validate()
 
     def __repr__(self) -> str:
@@ -151,6 +154,9 @@ class GammaChunk(Chunk):
         self.gamma = get_chunk_length(data)
 
     def get_gamma(self) -> float:
+        if self.gamma == 0:
+            return 0
+
         return 1 / (self.gamma / 100000)
 
     def __repr__(self):
@@ -202,12 +208,7 @@ class PngFileUI:
             bytes(chunk.data) for chunk in self.idat_chunks
         ]))
 
-        # todo: support 3-rd color type
-        bpx = 1
-        if self.ihdr_chunk.color_type == 2:
-            bpx = 3
-
-        scanline_length = self.ihdr_chunk.width * bpx
+        scanline_length = self.ihdr_chunk.width * self.ihdr_chunk.bpx
         scanlines = [
             (decompressed_data[i], decompressed_data[i + 1:i + scanline_length + 1])
             for i in range(0, len(decompressed_data), scanline_length + 1)
@@ -216,12 +217,13 @@ class PngFileUI:
         reconstructed_pxs = []
         painter.begin(pixmap)
         for i, (filter_type, scanline) in enumerate(scanlines):
-            for j in range(0, scanline_length, bpx):
-                for k in range(bpx):
+            # print(filter_type, scanline)
+            for j in range(0, scanline_length, self.ihdr_chunk.bpx):
+                for k in range(self.ihdr_chunk.bpx):
                     add_val = apply_filter(
                         filter_type=filter_type,
                         reconstructed_filters=reconstructed_pxs,
-                        bpx=bpx,
+                        bpx=self.ihdr_chunk.bpx,
                         row=i,
                         col=j + k,
                         scanline_length=scanline_length,
@@ -229,8 +231,8 @@ class PngFileUI:
                     px = (scanline[j + k] + add_val) % 256
                     reconstructed_pxs.append(px)
 
-                rgb = reconstructed_pxs[-bpx:]
-                if bpx == 1:
+                rgb = reconstructed_pxs[-self.ihdr_chunk.bpx:]
+                if self.ihdr_chunk.bpx == 1:
                     rgb = [rgb[0], rgb[0], rgb[0]]
 
                 next_gamma = 0
@@ -243,13 +245,10 @@ class PngFileUI:
                     next_gamma=next_gamma,
                     gamma_option=GammaOption.ASSIGN,
                 )
-                painter.setPen(
-                    QtGui.QColor(*[int(x * 255) for x in rgb])
-                )
-                painter.drawPoint(j // bpx, i)
+                painter.setPen(QtGui.QColor(*[int(x * 255) for x in rgb]))
+                painter.drawPoint(j // self.ihdr_chunk.bpx, i)
 
         painter.end()
-
         return pixmap
 
 
@@ -308,4 +307,4 @@ def apply_filter(
     if filter_type == 4:
         return paeth()
 
-    raise PngError('Invalid filter type')
+    raise PngError(f'Invalid filter type: {filter_type}')
