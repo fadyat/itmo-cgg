@@ -68,8 +68,11 @@ class PicturePreviewWidget(QWidget):
         self.transparency_input.textChanged.connect(self.change_transparency)
         self.gamma_input = QLineEdit()
         self.gamma_input.setText("1.0")
-
-
+        # save img button
+        self.saveImg_button = QPushButton("Save")
+        self.saveImg_button.setStyleSheet("QPushButton { padding: 5px; font-size: 30px;}")
+        self.preview_layout.addWidget(self.saveImg_button)
+        self.saveImg_button.clicked.connect(self.saveImg)
 
         self.form_layout = QVBoxLayout()
         self.form_layout.addLayout(self.select_file_layout)
@@ -87,7 +90,6 @@ class PicturePreviewWidget(QWidget):
         self.selected_file = QFileDialog.getOpenFileName(self, "Select file", "", "")[0]
         self.render_picture(self.selected_file)
 
-
     def change_transparency(self):
         if self.transparency_input.text().isdigit():
             self.current_transparency = int(self.transparency_input.text())
@@ -104,11 +106,16 @@ class PicturePreviewWidget(QWidget):
                 self.pnm_data.width * self.pnm_data.height * self.pnm_data.bytes_per_px,
                 self.pnm_data.bytes_per_px,
         ):
-            painter.setPen(QtGui.QColor(255, 255, 255))
-            painter.drawPoint(
-                i // self.pnm_data.bytes_per_px % self.pnm_data.width,
-                i // self.pnm_data.bytes_per_px // self.pnm_data.width
-            )
+            try:
+                painter.setPen(QtGui.QColor(int(self.pnm_data.content[i] * 255),
+                                            int(self.pnm_data.content[i + 1] * 255),
+                                            int(self.pnm_data.content[i + 2] * 255)))
+                painter.drawPoint(
+                    i // self.pnm_data.bytes_per_px % self.pnm_data.width,
+                    i // self.pnm_data.bytes_per_px // self.pnm_data.width
+                )
+            except IndexError:
+                pass
         painter.end()
         self.preview_label.setPixmap(px_map)
 
@@ -127,14 +134,19 @@ class PicturePreviewWidget(QWidget):
         return 1 - self._fpart(x)
 
     def putpixel(self, img: QImage, px, color, alpha=1):
-        compose_color = lambda bg, fg: int(round(alpha * fg + (1 - alpha) * bg))
+        compose_color = lambda bg, fg: int(
+            round(self.current_transparency / 255 * fg + (1 - self.current_transparency / 255) * bg))
         x, y = px
         if 0 <= x < img.width() and 0 <= y < img.height():
             r, g, b, _ = img.pixelColor(x, y).getRgb()
+            print(r, g, b)
             img.setPixelColor(x, y, QtGui.QColor(compose_color(r, color[0]),
                                                  compose_color(g, color[1]),
                                                  compose_color(b, color[2]),
                                                  self.current_transparency))
+            self.pnm_data.content[(y * img.width() + x) * 3] = compose_color(r, color[0]) / 255
+            self.pnm_data.content[(y * img.width() + x) * 3 + 1] = compose_color(g, color[1]) / 255
+            self.pnm_data.content[(y * img.width() + x) * 3 + 2] = compose_color(b, color[2]) / 255
 
     def draw_line(self, img, p1, p2, color):
         x1, y1 = p1
@@ -168,8 +180,8 @@ class PicturePreviewWidget(QWidget):
             for dx in range(self.current_thickness + 1):
                 for dy in range(self.current_thickness + 1):
                     if 0 <= x - dx < img.width() and 0 <= intery - dy < img.height():
-                        self.putpixel(img, p(x - dx, int(intery) - dy), color, self._rfpart(intery))
-                        self.putpixel(img, p(x - dx, int(intery) - dy + 1), color, self._fpart(intery))
+                        self.putpixel(img, p(x - dx, int(intery) - dy), color, self._rfpart(int(intery)))
+                        self.putpixel(img, p(x - dx, int(intery) - dy + 1), color, self._fpart(int(intery)))
             intery += grad
 
     def draw_point(
@@ -209,6 +221,9 @@ class PicturePreviewWidget(QWidget):
             )
             self.draw_pixels = []
             self.preview_label.setPixmap(QtGui.QPixmap.fromImage(img))
+
+    def saveImg(self):
+        self.preview_label.pixmap().save("test.png")
 
 
 class AntiAliasingWidgetMain(QWidget):
