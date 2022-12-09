@@ -19,7 +19,7 @@ from src.utils.label import create_beauty_label
 
 class ApplicationWindow(QMainWindow):
     toolbar_height: int = 30
-    selected_file: str = "/Users/artyomfadeyev/GitHub/cg22-project-NeedForGirl/docs/lena.pnm"
+    selected_file: str = None
     picture_color_format: ColorFormat = ColorFormat.RGB
     new_color_format: ColorFormat = ColorFormat.RGB
     dithering_algo: DitheringAlgo = DitheringAlgo.NONE
@@ -101,7 +101,7 @@ class ApplicationWindow(QMainWindow):
         self.scaling_widget = ScalingWidget(self)
         self.setCentralWidget(self.preview)
 
-        self.select_file_test()
+        # self.select_file_test()
 
     def select_file_test(self):
         self.preview.update_preview(

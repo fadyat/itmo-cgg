@@ -3,7 +3,7 @@ import logging
 from PyQt6.QtWidgets import QMessageBox, QWidget
 
 
-class PnmFileErrorMessage(QMessageBox):
+class FileErrorMessage(QMessageBox):
     def __init__(
         self,
         message: str,

@@ -29,6 +29,7 @@ def ordered_pixel(
     y: int,
     dithering_bits_values: list[float],
 ) -> list[float]:
+    # todo: find a mistake in this algorithm
     bayer = bayer_matrix[y % len(bayer_matrix)][x % len(bayer_matrix[0])]
     avg = sum(pixel) / len(pixel)
     r = 1 / len(dithering_bits_values)
